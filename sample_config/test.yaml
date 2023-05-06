@@ -1,0 +1,52 @@
+##############################
+######## Key Variables
+##############################
+indir: /home/william/pipeline/cell10x/test/rawdata
+outdir: /home/william/pipeline/cell10x/test/out
+srcdir: &srcdir /home/william/pipeline/cell10x/src
+Lsample:
+  - test
+species: &species human
+
+
+
+##############################
+######## Sample Variables
+##############################
+test:
+  mRNA: True
+  VDJB: True
+  VDJT: True
+
+
+
+##############################
+######## Resources
+##############################
+Dresources:
+    qc_cpus: 2
+    VDJB_count_cpus: 6
+    count_local_mem: 10 # only use if test on local machine with limited memory
+
+##############################
+######## Default Variables
+##############################
+default:
+  chemistry: 'SC5P-R2'
+
+
+##############################
+######## Constant
+##############################
+# software
+cellranger: !!python/object/apply:os.path.join [*srcdir, "cellranger-7.1.0/bin/cellranger"]
+
+
+# gex-ref
+gex_ref_dir: &gex_ref_dir !!python/object/apply:pyutils.list_join [*species, "-gex-ref"]
+gex_ref: !!python/object/apply:os.path.join [*srcdir, *gex_ref_dir]
+
+# vdj-ref
+vdj_ref_dir: &vdj_ref_dir !!python/object/apply:pyutils.list_join [*species, "-vdj-ref"]
+vdj_ref: !!python/object/apply:os.path.join [*srcdir, *vdj_ref_dir]
+
