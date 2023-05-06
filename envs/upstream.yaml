@@ -1,0 +1,8 @@
+name: cell10x-upstream
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - fastqc
+  - multiqc
