@@ -2,18 +2,23 @@
 
 1. 安装 `conda`和 `mamba`，设置合适的 `channel`
 2. 创建运行pipeline的新环境，并安装 `snakemake`
+
 ```shell
 mamba create -n cell10x
 mamba activate cell10x
 mamba install snakemake
 ```
+
 3. 安装pipeline所需依赖
+
 ```shell
 make setup
 ```
 
 # 输入
+
 - 将rawdata整理为如下目录结构
+
 ```
 rawdata/
  |_ test/
@@ -34,6 +39,10 @@ rawdata/
 # count
 
 # 常见问题
+
+## 软件版本
+
+- `snakemake`：7.25.2
 
 ## 安装
 
