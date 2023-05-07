@@ -25,8 +25,11 @@ test:
 ##############################
 Dresources:
     qc_cpus: 2
+    mRNA_count_cpus: 6
     VDJB_count_cpus: 6
-    count_local_mem: 10 # only use if test on local machine with limited memory
+    VDJT_count_cpus: 6
+    # only use if test on local machine with limited memory
+    count_local_mem: 8
 
 ##############################
 ######## Default Variables
