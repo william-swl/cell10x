@@ -63,7 +63,7 @@ if lambda wildcards:config[wildcards.sample]['mRNA']:
         params: gex_ref = config['gex_ref']
         log: e = Plog + '/mRNA_count/{sample}.e', o = Plog + '/mRNA_count/{sample}.o'
         benchmark: Plog + '/mRNA_count/{sample}.bmk'
-        resources: cpus=Dresources['mRNA_count_cpus'], count_local_mem=Dresources['count_local_mem']
+        resources: cpus=Dresources['mRNA_count_cpus']
         conda: f'{pip_dir}/envs/upstream.yaml'
         shell:"""
             cd {Pcount}/{wildcards.sample}
@@ -73,8 +73,6 @@ if lambda wildcards:config[wildcards.sample]['mRNA']:
                 --fastqs={input.fq_dir} \\
                 --sample={wildcards.sample}-mRNA \\
                 --localcores {resources.cpus} --mempercore 4 \\
-                # only use localmem if test on local machine with limited memory 
-                --localmem={resources.count_local_mem} \\
                 1>{log.o} 2>{log.e}
             cd -
             """
@@ -89,7 +87,7 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
         params: vdj_ref = config['vdj_ref']
         log: e = Plog + '/VDJB_count/{sample}.e', o = Plog + '/VDJB_count/{sample}.o'
         benchmark: Plog + '/VDJB_count/{sample}.bmk'
-        resources: cpus=Dresources['VDJB_count_cpus'], count_local_mem=Dresources['count_local_mem']
+        resources: cpus=Dresources['VDJB_count_cpus']
         conda: f'{pip_dir}/envs/upstream.yaml'
         shell:"""
             cd {Pcount}/{wildcards.sample}
@@ -99,8 +97,6 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
                 --fastqs={input.fq_dir} \\
                 --sample={wildcards.sample}-VDJB \\
                 --localcores {resources.cpus} --mempercore 4 \\
-                # only use if test on local machine with limited memory 
-                --localmem={resources.count_local_mem} \\
                 1>{log.o} 2>{log.e}
             cd -
             """
@@ -116,7 +112,7 @@ if lambda wildcards:config[wildcards.sample]['VDJT']:
         params: vdj_ref = config['vdj_ref']
         log: e = Plog + '/VDJT_count/{sample}.e', o = Plog + '/VDJT_count/{sample}.o'
         benchmark: Plog + '/VDJT_count/{sample}.bmk'
-        resources: cpus=Dresources['VDJT_count_cpus'], count_local_mem=Dresources['count_local_mem']
+        resources: cpus=Dresources['VDJT_count_cpus']
         conda: f'{pip_dir}/envs/upstream.yaml'
         shell:"""
             cd {Pcount}/{wildcards.sample}
@@ -126,8 +122,6 @@ if lambda wildcards:config[wildcards.sample]['VDJT']:
                 --fastqs={input.fq_dir} \\
                 --sample={wildcards.sample}-VDJT \\
                 --localcores {resources.cpus} --mempercore 4 \\
-                 # only use if test on local machine with limited memory 
-                --localmem={resources.count_local_mem} \\
                 1>{log.o} 2>{log.e}
             cd -
             """
