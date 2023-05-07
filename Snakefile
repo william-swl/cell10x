@@ -1,4 +1,4 @@
-import os,time,shutil
+import os,time,shutil,json
 pip_dir = os.getcwd()
 configfile: f'{pip_dir}/sample_config/test.yaml'
 
@@ -15,6 +15,7 @@ Plog=f'{outdir}/0log'
 Pstat=f'{outdir}/0stat'
 Pqc=f'{outdir}/1qc'
 Pcount=f'{outdir}/2count'
+PmRNA=f'{outdir}/3parse/mRNA'
 
 for p in [Pqc,Pcount]:
     os.makedirs(p, exist_ok=True)
@@ -36,6 +37,27 @@ rule all:
         mRNA_count_dir = [Pcount + f'/{sample}/{sample}-mRNA/outs' for sample in Lsample if config[sample]['mRNA']],
         VDJB_count_dir = [Pcount + f'/{sample}/{sample}-VDJB/outs' for sample in Lsample if config[sample]['VDJB']],
         VDJT_count_dir = [Pcount + f'/{sample}/{sample}-VDJT/outs' for sample in Lsample if config[sample]['VDJT']],
+        # parse
+        mRNA_csv = [PmRNA + f'/{sample}/mRNA.csv' for sample in Lsample if config[sample]['mRNA']],
+
+rule notebook_init:
+    input: 
+        mRNA_parse_r='scripts/mRNA_parse.r.ipynb'
+    output: 
+        mRNA_parse_r=Plog + '/mRNA_parse.r.ipynb'
+    resources: cpus=1
+    log: e = Plog + '/notebook_init.e', o = Plog + '/notebook_init.o'
+    run:
+        for k, f in input.items():
+            notebook = json.loads(open(f, 'r').read())
+            if f.endswith('.r.ipynb'):
+                notebook['metadata']['kernelspec']['name'] = 'ir'
+                notebook['metadata']['kernelspec']['display_name'] = 'R'
+            elif f.endswith('.py.ipynb'):
+                notebook['metadata']['kernelspec']['name'] = 'python3'
+                notebook['metadata']['kernelspec']['display_name'] = 'Python 3 (ipykernel)'
+            with open(output[k], 'w') as out:
+                json.dump(notebook, out)
 
 
 rule qc:
@@ -76,6 +98,21 @@ if lambda wildcards:config[wildcards.sample]['mRNA']:
                 1>{log.o} 2>{log.e}
             cd -
             """
+
+    rule mRNA_parse:
+        input:
+            mRNA_count_dir = rules.mRNA_count.output.mRNA_count_dir,
+            mRNA_parse_r = rules.notebook_init.output.mRNA_parse_r
+        output:
+            mRNA_csv = PmRNA + '/{sample}/mRNA.csv',
+            mRNA_rds = PmRNA + '/{sample}/mRNA.rds',
+            mRNA_stat = PmRNA + '/{sample}/mRNA_stat.yaml'
+        log: notebook = Plog + '/mRNA_parse/{sample}.r.ipynb', e = Plog + '/mRNA_parse/{sample}.e', o = Plog + '/mRNA_parse/{sample}.o'
+        benchmark: Plog + '/mRNA_parse/{sample}.bmk'
+        resources: cpus=Dresources['mRNA_parse_cpus']
+        conda: f'{pip_dir}/envs/RNA.yaml'
+        notebook: rules.notebook_init.output.mRNA_parse_r
+
 
 ##################################
 ### VDJB

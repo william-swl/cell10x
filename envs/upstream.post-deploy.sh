@@ -1,12 +1,13 @@
 #!/usr/bin/bash
-srcdir=src
 log=$CONDA_PREFIX/deploy.log
-
+srcdir=src
+mkdir -p $srcdir
 
 ##################################
 ### Install cellranger-7.1.0
 ##################################
-cr_url="https://cf.10xgenomics.com/releases/cell-exp/cellranger-7.1.0.tar.gz?Expires=1683406556&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9jZi4xMHhnZW5vbWljcy5jb20vcmVsZWFzZXMvY2VsbC1leHAvY2VsbHJhbmdlci03LjEuMC50YXIuZ3oiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE2ODM0MDY1NTZ9fX1dfQ__&Signature=iACtsRdEsNKtdOQwjCyLXXjn~1Kr0DmQii8XLHz8N~SRMpaSC3Sm7dSs5D3ajtyq-vBPbyw0Qa~TuYbmqMynFFao749Zujap~tNGwUquQzXjRXfgY-z7vPjlf2m~nD93zb5avPNjzXSuHWWYp1dbUt3r7ltqxiu9Khq4ZPnmLNgfKZMjDP6xrgqgXZCEIkpsPG1N49dPJqRjHas1IUR0IKfFJv2i6feInXbdpKpKmu2bcCNL6m9ygHvXybz4Yzx-RFDMIcjy3G71ADG86yI2Xa3RozEHDZSkRCNvIWi9i~HmcqPcQpRGQCbPVbC78SiJ15T635ifJn4QDhtO7NngHw__&Key-Pair-Id=APKAI7S6A5RYOXBWRPDA"
+cr_url="https://cf.10xgenomics.com/releases/cell-exp/cellranger-7.1.0.tar.gz?Expires=1690848000&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9jZi4xMHhnZW5vbWljcy5jb20vcmVsZWFzZXMvY2VsbC1leHAvY2VsbHJhbmdlci03LjEuMC50YXIuZ3oiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE2ODM1MDEyNTJ9fX1dfQ__&Signature=MfpgjgYj7rA~8kPlGnSL4QLEP3s6SMS6hy3bjCyoa1A4YNSj84i6OBdQf15ZupNo3tnCQ5uvl0AeXpzAKRrcW9sMPmtiC0ZnY3sj~J394MYCjJ0gWS2velZZDoYozKWOEpctqOugMQadsPaFSKrccz05YcLvoUiG5tpluJmJ~31AnmxswkaYbjZ4wlPmz2mw6Jl0PxihO7Ha5faSg3xOzPYABVmvAP5ji13bDIZwBpVOX92AO~LaSGs2M0vfPTlZq2IeRUh~T7Mc~13Pl4n7aQ6n3f5teWBN3q4syzaGEHASMjvKWqwX9fJYgFFv~LMyraa9lTFvBxKsuH2iysH6wA__&Key-Pair-Id=APKAI7S6A5RYOXBWRPDA"
+
 cr_md5=0938af789631800b20176527063c029a
 
 # installed
