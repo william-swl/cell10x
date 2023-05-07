@@ -1,4 +1,4 @@
-# /usr/bin/bash
+#!/usr/bin/bash
 srcdir=src
 log=$CONDA_PREFIX/deploy.log
 

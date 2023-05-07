@@ -1,5 +1,5 @@
 import os,time,shutil
-pip_dir='/home/william/pipeline/cell10x'
+pip_dir = os.getcwd()
 configfile: f'{pip_dir}/sample_config/test.yaml'
 
 
