@@ -12,14 +12,14 @@ cr_md5=0938af789631800b20176527063c029a
 
 # installed
 if [ -d "${srcdir}/cellranger-7.1.0" ]; then
-    echo ">>> Cellranger already installed" >> $log 2>&1
+    echo ">>> Cellranger has been installed" >> $log 2>&1
 else
     # downloaded
     if [ -f "${srcdir}/cellranger-7.1.0.tar.gz" ]; then
         md5_local=`md5sum ${srcdir}/cellranger-7.1.0.tar.gz | awk '{print $1}'`
         # download unfinished
         if [ "$md5_local" == "$cr_md5" ]; then
-            echo ">>> Cellranger already downloaded" >> $log 2>&1
+            echo ">>> Cellranger has been downloaded" >> $log 2>&1
         # download finished
         else
             wget -c -O ${srcdir}/cellranger-7.1.0.tar.gz $cr_url >> $log 2>&1
@@ -44,14 +44,14 @@ fi
 gex_ref_url=https://cf.10xgenomics.com/supp/cell-exp/refdata-gex-GRCh38-2020-A.tar.gz
 gex_ref_md5=886eeddde8731ffb58552d0bb81f533d
 if [ -d "${srcdir}/human-gex-ref" ]; then
-    echo ">>> Cellranger human gene expression reference already installed" >> $log 2>&1
+    echo ">>> Cellranger human gene expression reference has been installed" >> $log 2>&1
 else
     # downloaded
     if [ -f "${srcdir}/human-gex-ref.tar.gz" ]; then
         md5_local=`md5sum ${srcdir}/human-gex-ref.tar.gz | awk '{print $1}'`
         # download unfinished
         if [ "$md5_local" == "$gex_ref_md5" ]; then
-            echo ">>> Cellranger human gene expression reference already downloaded" >> $log 2>&1
+            echo ">>> Cellranger human gene expression reference has been downloaded" >> $log 2>&1
         # download finished
         else
             wget -c -O ${srcdir}/human-gex-ref.tar.gz $gex_ref_url >> $log 2>&1
@@ -76,14 +76,14 @@ fi
 vdj_ref_url=https://cf.10xgenomics.com/supp/cell-vdj/refdata-cellranger-vdj-GRCh38-alts-ensembl-7.1.0.tar.gz
 vdj_ref_md5=65b5b033723b07fc1bb5375e5645761c
 if [ -d "${srcdir}/human-vdj-ref" ]; then
-    echo ">>> Cellranger human vdj reference already installed" >> $log 2>&1
+    echo ">>> Cellranger human vdj reference has been installed" >> $log 2>&1
 else
     # downloaded
     if [ -f "${srcdir}/human-vdj-ref.tar.gz" ]; then
         md5_local=`md5sum ${srcdir}/human-vdj-ref.tar.gz | awk '{print $1}'`
         # download unfinished
         if [ "$md5_local" == "$vdj_ref_md5" ]; then
-            echo ">>> Cellranger human vdj reference already downloaded" >> $log 2>&1
+            echo ">>> Cellranger human vdj reference has been downloaded" >> $log 2>&1
         # download finished
         else
             wget -c -O ${srcdir}/human-vdj-ref.tar.gz $vdj_ref_url >> $log 2>&1

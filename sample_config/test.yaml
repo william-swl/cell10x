@@ -17,6 +17,9 @@ test:
   mRNA: True
   VDJB: True
   VDJT: True
+  Nmin_cell_to_keep_gene: 10
+  Nmin_gene_to_keep_cell: 10
+  celltype_ref_tissue: common
 
 
 
@@ -33,8 +36,13 @@ Dresources:
 ##############################
 ######## Default Variables
 ##############################
-default:
-  chemistry: 'SC5P-R2'
+# mRNA parse
+Nmin_cell_to_keep_gene: 100
+Nmin_gene_to_keep_cell: 100
+celltype_ref_tissue: immune
+Ndim_umap_use: 30
+
+
 
 
 ##############################
@@ -43,12 +51,14 @@ default:
 # software
 cellranger: !!python/object/apply:os.path.join [*srcdir, "cellranger-7.1.0/bin/cellranger"]
 
-
-# gex-ref
+# gene expression reference
 gex_ref_dir: &gex_ref_dir !!python/object/apply:pyutils.list_join [*species, "-gex-ref"]
 gex_ref: !!python/object/apply:os.path.join [*srcdir, *gex_ref_dir]
 
-# vdj-ref
+# VDJ reference
 vdj_ref_dir: &vdj_ref_dir !!python/object/apply:pyutils.list_join [*species, "-vdj-ref"]
 vdj_ref: !!python/object/apply:os.path.join [*srcdir, *vdj_ref_dir]
 
+# celltype reference
+celltype_ref_file: &celltype_ref_file !!python/object/apply:pyutils.list_join [*species, ".rds"]
+celltype_ref: !!python/object/apply:os.path.join [*srcdir, 'celltype_ref', *celltype_ref_file]

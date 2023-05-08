@@ -22,13 +22,13 @@ make setup
 ```
 rawdata/
  |_ test/
-   |_ test-mRNA
-   |_ test-VDJT
-   |_ test-VDJB
+   |_ test-mRNA_S...fastq.gz
+   |_ test-VDJT_S...fastq.gz
+   |_ test-VDJB_S...fastq.gz
  |_ sample1/
-   |_ sample1-mRNA
-   |_ sample1-VDJB
-   |_ sample1-FB
+   |_ sample1-mRNA...fastq.gz
+   |_ sample1-VDJB...fastq.gz
+   |_ sample1-FB...fastq.gz
 
 ```
 
@@ -37,6 +37,25 @@ rawdata/
 - 对 ` {indir}/{sample}/` 目录下的所有 `fastq.gz `或 `fq.gz`文件产生质控报告，涉及 `{sample}-mRNA_S..., {sample}-VDJB_S...`等
 
 # count
+
+
+# parse
+
+## mRNA
+- 使用SingleR进行细胞类型注释，reference来自[celldex](http://bioconductor.org/packages/release/data/experiment/vignettes/celldex/inst/doc/userguide.html#34_Monaco_immune_data)
+- 默认包含四个注释索引，根据`sample_config`中的`species, celltype_ref_tissue`选定用哪一个
+1. 人类通用：human common, HumanPrimaryCellAtlasData
+2. 人类免疫：human immune, MonacoImmuneData
+3. 小鼠通用：mouse common, MouseRNAseqData
+4. 小鼠免疫：mouse immune, ImmGenData
+- 输出`Seurat`对象的`rds`，和其`meta.data`的`csv`
+
+
+## VDJ
+
+
+
+
 
 # 常见问题
 
