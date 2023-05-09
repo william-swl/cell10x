@@ -42,18 +42,27 @@ rule all:
         mRNA_count_dir = [Pcount + f'/{sample}/{sample}-mRNA/outs' for sample in Lsample if config[sample]['mRNA']],
         VDJB_count_dir = [Pcount + f'/{sample}/{sample}-VDJB/outs' for sample in Lsample if config[sample]['VDJB']],
         VDJT_count_dir = [Pcount + f'/{sample}/{sample}-VDJT/outs' for sample in Lsample if config[sample]['VDJT']],
-        # parse
+        # parse mRNA
         mRNA_csv = [PmRNA + f'/{sample}/mRNA.csv' for sample in Lsample if config[sample]['mRNA']],
+        # parse VDJB
         VDJB_igblast_tsv = [PVDJB + f'/{sample}/igblast_airr.tsv' for sample in Lsample if config[sample]['VDJB']],
         VDJB_changeo = [PVDJB + f'/{sample}/changeo_clone-pass.tsv' for sample in Lsample if config[sample]['VDJB']],
+        VDJB_anarci_H = [PVDJB + f'/{sample}/anarci_H.csv' for sample in Lsample if config[sample]['VDJB']],
+        VDJB_anarci_KL = [PVDJB + f'/{sample}/anarci_KL.csv' for sample in Lsample if config[sample]['VDJB']],
+        VDJB_csv = [PVDJB + f'/{sample}/VDJB.csv' for sample in Lsample if config[sample]['VDJB']],
+        # parse VDJT
         VDJT_igblast_tsv = [PVDJT + f'/{sample}/igblast_airr.tsv' for sample in Lsample if config[sample]['VDJT']],
         VDJT_changeo = [PVDJT + f'/{sample}/changeo_clone-pass.tsv' for sample in Lsample if config[sample]['VDJT']],
 
 rule notebook_init:
     input: 
-        mRNA_parse_r='scripts/mRNA_parse.r.ipynb'
+        mRNA_parse_r='scripts/mRNA_parse.r.ipynb',
+        VDJB_parse_r='scripts/VDJB_parse.r.ipynb',
+        VDJT_parse_r='scripts/VDJT_parse.r.ipynb',
     output: 
-        mRNA_parse_r=Plog + '/mRNA_parse.r.ipynb'
+        mRNA_parse_r=Plog + '/mRNA_parse.r.ipynb',
+        VDJB_parse_r=Plog + '/VDJB_parse.r.ipynb',
+        VDJT_parse_r=Plog + '/VDJT_parse.r.ipynb',
     resources: cpus=1
     log: e = Plog + '/notebook_init.e', o = Plog + '/notebook_init.o'
     run:
@@ -150,6 +159,7 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
     rule VDJB_igblast:
         input: VDJB_count_dir = rules.VDJB_count.output.VDJB_count_dir
         output:
+            VDJB_orf_nt_fa = PVDJB + '/{sample}/seq_orf_nt.fasta',
             VDJB_igblast_tsv = PVDJB + '/{sample}/igblast_airr.tsv',
             VDJB_igblast_txt = PVDJB + '/{sample}/igblast_blast.txt',
         log: e = Plog + '/VDJB_igblast/{sample}.e', o = Plog + '/VDJB_igblast/{sample}.o'
@@ -158,20 +168,30 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
         params: igblast_VDJB_ref_prefix = config['igblast_VDJB_ref_prefix']
         conda: f'{pip_dir}/envs/VDJ.yaml'
         shell:"""
+            # fetch sequences in ORF
+            R -e " \
+                x <- readr::read_tsv('{input.VDJB_count_dir}/airr_rearrangement.tsv'); \
+                genogamesh::parse_CellRanger_vdjseq(x, file='{output.VDJB_orf_nt_fa}', fa_content='seq_orf_nt') \
+                " 1>>{log.o} 2>>{log.e}
+            
+            # airr format
             igblastn -organism {species} -germline_db_V {params.igblast_VDJB_ref_prefix}V -domain_system imgt\\
                 -germline_db_D {params.igblast_VDJB_ref_prefix}D -germline_db_J {params.igblast_VDJB_ref_prefix}J \\
                 -show_translation -outfmt 19 -num_threads {resources.cpus} \\
-                -query {input.VDJB_count_dir}/all_contig.fasta \\
-                -out {output.VDJB_igblast_tsv} 1>{log.o} 2>{log.e}
+                -query {output.VDJB_orf_nt_fa} \\
+                -out {output.VDJB_igblast_tsv} 1>>{log.o} 2>>{log.e}
+            
+            # blast format
             igblastn -organism {species} -germline_db_V {params.igblast_VDJB_ref_prefix}V -domain_system imgt\\
                 -germline_db_D {params.igblast_VDJB_ref_prefix}D -germline_db_J {params.igblast_VDJB_ref_prefix}J \\
                 -show_translation -outfmt '7 std qseq sseq btop' -num_threads {resources.cpus} \\
-                -query {input.VDJB_count_dir}/all_contig.fasta \\
-                -out {output.VDJB_igblast_txt} 1>{log.o} 2>{log.e}
+                -query {output.VDJB_orf_nt_fa} \\
+                -out {output.VDJB_igblast_txt} 1>>{log.o} 2>>{log.e}
             """
 
     rule VDJB_changeo:
         input:
+            VDJB_orf_nt_fa = rules.VDJB_igblast.output.VDJB_orf_nt_fa,
             VDJB_count_dir = rules.VDJB_count.output.VDJB_count_dir,
             VDJB_igblast_txt = rules.VDJB_igblast.output.VDJB_igblast_txt
         output: 
@@ -188,17 +208,59 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             outdir = PVDJB + '/{sample}'
         shell:"""
             MakeDb.py igblast -i {input.VDJB_igblast_txt} -r {params.changeo_VB_ref} {params.changeo_DB_ref} {params.changeo_JB_ref} \\
-                -s {input.VDJB_count_dir}/all_contig.fasta \\
+                -s {input.VDJB_orf_nt_fa} \\
                 --outdir {params.outdir} --outname changeo --regions default \\
-                --failed --partial --format airr --extended --log {log.o} 2>{log.e}
+                --failed --partial --format airr --extended --log {log.o} 2>>{log.e}
             
             DefineClones.py -d {output.VDJB_changeo_db} --outdir {params.outdir} --failed --act set --nproc {resources.cpus}\\
-                --outname changeo --model ham --norm len --dist 0.15 1>{log.o} 2>{log.e}
+                --outname changeo --model ham --norm len --dist 0.15 1>>{log.o} 2>>{log.e}
             
             # in case all contigs are failed
             touch {output.VDJB_changeo}
             """
 
+    rule VDJB_anarci:
+        input: VDJB_count_dir = rules.VDJB_count.output.VDJB_count_dir
+        output:
+            VDJB_orf_aa_fa = PVDJB + '/{sample}/seq_orf_aa.fasta',
+            VDJB_anarci_H = PVDJB + '/{sample}/anarci_H.csv',
+            VDJB_anarci_KL = PVDJB + '/{sample}/anarci_KL.csv',
+        log: e = Plog + '/VDJB_anarci/{sample}.e', o = Plog + '/VDJB_anarci/{sample}.o'
+        benchmark: Plog + '/VDJB_anarci/{sample}.bmk'
+        resources: cpus=Dresources['VDJB_anarci_cpus']
+        params: outdir = PVDJB + '/{sample}'
+        conda: f'{pip_dir}/envs/VDJ.yaml'
+        shell:"""
+            # fetch sequences in ORF
+            R -e " \
+                x <- readr::read_tsv('{input.VDJB_count_dir}/airr_rearrangement.tsv'); \
+                genogamesh::parse_CellRanger_vdjseq(x, file='{output.VDJB_orf_aa_fa}', fa_content='seq_orf_aa') \
+                " 1>>{log.o} 2>>{log.e}
+            
+            # airr format
+            cd {params.outdir}
+            ANARCI -i {output.VDJB_orf_aa_fa} -o anarci -ht anarci_hittable.txt \\
+                --use_species {species} --restrict ig -s chothia --csv --ncpu {resources.cpus} \\
+                --assign_germline 1>>{log.o} 2>>{log.e}
+            """
+
+
+
+    rule VDJB_parse:
+        input:
+            VDJB_count_dir = rules.VDJB_count.output.VDJB_count_dir,
+            VDJB_igblast_tsv = rules.VDJB_igblast.output.VDJB_igblast_tsv,
+            VDJB_igblast_txt = rules.VDJB_igblast.output.VDJB_igblast_txt,
+            VDJB_changeo = rules.VDJB_changeo.output.VDJB_changeo,
+            VDJB_parse_r = rules.notebook_init.output.VDJB_parse_r
+        output:
+            VDJB_csv = PVDJB + '/{sample}/VDJB.csv',
+            VDJB_stat = PVDJB + '/{sample}/VDJB_stat.yaml'
+        log: notebook = Plog + '/VDJB_parse/{sample}.r.ipynb', e = Plog + '/VDJB_parse/{sample}.e', o = Plog + '/VDJB_parse/{sample}.o'
+        benchmark: Plog + '/VDJB_parse/{sample}.bmk'
+        resources: cpus=Dresources['VDJB_parse_cpus']
+        conda: f'{pip_dir}/envs/VDJ.yaml'
+        notebook: rules.notebook_init.output.VDJB_parse_r
 
 
 ##################################
@@ -228,6 +290,7 @@ if lambda wildcards:config[wildcards.sample]['VDJT']:
     rule VDJT_igblast:
         input: VDJT_count_dir = rules.VDJT_count.output.VDJT_count_dir
         output:
+            VDJT_orf_nt_fa = PVDJT + '/{sample}/seq_orf_nt.fasta',
             VDJT_igblast_tsv = PVDJT + '/{sample}/igblast_airr.tsv',
             VDJT_igblast_txt = PVDJT + '/{sample}/igblast_blast.txt',
         log: e = Plog + '/VDJT_igblast/{sample}.e', o = Plog + '/VDJT_igblast/{sample}.o'
@@ -236,20 +299,30 @@ if lambda wildcards:config[wildcards.sample]['VDJT']:
         params: igblast_VDJT_ref_prefix = config['igblast_VDJT_ref_prefix']
         conda: f'{pip_dir}/envs/VDJ.yaml'
         shell:"""
+            # fetch sequences in ORF
+            R -e " \
+                x <- readr::read_tsv('{input.VDJT_count_dir}/airr_rearrangement.tsv'); \
+                genogamesh::parse_CellRanger_vdjseq(x, file='{output.VDJT_orf_nt_fa}', fa_content='seq_orf_nt') \
+                " 1>>{log.o} 2>>{log.e}
+            
+            # airr format
             igblastn -organism {species} -germline_db_V {params.igblast_VDJT_ref_prefix}V -domain_system imgt\\
                 -germline_db_D {params.igblast_VDJT_ref_prefix}D -germline_db_J {params.igblast_VDJT_ref_prefix}J \\
                 -show_translation -outfmt 19 -num_threads {resources.cpus} \\
-                -query {input.VDJT_count_dir}/all_contig.fasta \\
-                -out {output.VDJT_igblast_tsv} 1>{log.o} 2>{log.e}
+                -query {output.VDJT_orf_nt_fa} \\
+                -out {output.VDJT_igblast_tsv} 1>>{log.o} 2>>{log.e}
+            
+            # blast format
             igblastn -organism {species} -germline_db_V {params.igblast_VDJT_ref_prefix}V -domain_system imgt\\
                 -germline_db_D {params.igblast_VDJT_ref_prefix}D -germline_db_J {params.igblast_VDJT_ref_prefix}J \\
                 -show_translation -outfmt '7 std qseq sseq btop' -num_threads {resources.cpus} \\
-                -query {input.VDJT_count_dir}/all_contig.fasta \\
-                -out {output.VDJT_igblast_txt} 1>{log.o} 2>{log.e}
+                -query {output.VDJT_orf_nt_fa} \\
+                -out {output.VDJT_igblast_txt} 1>>{log.o} 2>>{log.e}
             """
 
     rule VDJT_changeo:
         input:
+            VDJT_orf_nt_fa = rules.VDJT_igblast.output.VDJT_orf_nt_fa,
             VDJT_count_dir = rules.VDJT_count.output.VDJT_count_dir,
             VDJT_igblast_txt = rules.VDJT_igblast.output.VDJT_igblast_txt
         output: 
@@ -266,12 +339,12 @@ if lambda wildcards:config[wildcards.sample]['VDJT']:
             outdir = PVDJT + '/{sample}'
         shell:"""
             MakeDb.py igblast -i {input.VDJT_igblast_txt} -r {params.changeo_VT_ref} {params.changeo_DT_ref} {params.changeo_JT_ref} \\
-                -s {input.VDJT_count_dir}/all_contig.fasta \\
+                -s {input.VDJT_orf_nt_fa} \\
                 --outdir {params.outdir} --outname changeo --regions default \\
-                --failed --partial --format airr --extended --log {log.o} 2>{log.e}
+                --failed --partial --format airr --extended --log {log.o} 2>>{log.e}
             
             DefineClones.py -d {output.VDJT_changeo_db} --outdir {params.outdir} --failed --act set --nproc {resources.cpus}\\
-                --outname changeo --model ham --norm len --dist 0.15 1>{log.o} 2>{log.e}
+                --outname changeo --model ham --norm len --dist 0.15 1>>{log.o} 2>>{log.e}
             
             # in case all contigs are failed
             touch {output.VDJT_changeo}

@@ -13,6 +13,10 @@ dependencies:
   - r-irkernel
   - igblast
   - changeo
+  - anarci
   # for baizer
   - r-openxlsx=4.2.5.2
   - r-curl
+  # for genogamesh
+  - r-seurat=4.3.0
+  - bioconductor-singler=2.0.0
