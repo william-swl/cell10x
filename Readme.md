@@ -130,6 +130,37 @@ rawdata/
 
 ## VDJ
 
+| 项目             | 1                               | 2                      | 3                       | 4                              | 5                      |
+| ---------------- | ------------------------------- | ---------------------- | ----------------------- | ------------------------------ | ---------------------- |
+| 软件             | Cellranger                      | Cellranger             | IgBlast                 | IgBlast                        | Change-O               |
+| 输出文件名       | filtered_contig_annotations.csv | airr_rearrangement.tsv | -outfmt 19              | -outfmt '7 std qseq sseq btop' | changeo_clone-pass.tsv |
+| contig id        | contig_id                       | sequence_id            | sequence_id             | Query                          | sequence_id            |
+| contig类型       | chain                           |                        | locus                   |                                | locus                  |
+| vdj基因          | v_gene                          | x_call                 |                         |                                |                        |
+| 详细vdj基因      |                                 |                        | x_call                  | √                              | x_call                 |
+| c基因            | c_gene                          | c_call                 |                         |                                | c_call                 |
+| vdj-nt序列       |                                 |                        | x_sequence_alignment    |                                |                        |
+| vdj-aa序列       |                                 |                        | x_sequence_alignment_aa |                                |                        |
+| cdr-aa序列       | cdrx                            |                        | cdrx_aa                 |                                |                        |
+| cdr-nt序列       | cdrx_nt                         |                        | cdrx                    |                                | cdrx                   |
+| fwr-aa序列       | fwrx                            |                        | fwrx_aa                 |                                |                        |
+| fwr-nt序列       | fwrx_nt                         |                        | fwrx                    |                                | fwrx                   |
+| np序列           |                                 |                        | np1/2                   |                                |                        |
+| reads            | reads                           |                        |                         |                                |                        |
+| umis             | umis                            |                        |                         |                                |                        |
+| clone            | raw_clonotype_id                | clone_id               |                         |                                | clone_id               |
+| 全长aa序列       |                                 | sequence_aa            |                         |                                |                        |
+| 全长nt序列       |                                 | sequence               | sequence                |                                | sequence               |
+| 比对aa序列       |                                 |                        | sequence_alignment_aa   |                                |                        |
+| 比对nt序列       |                                 | sequence_alignment     | sequence_alignment      |                                | sequence_alignment     |
+| 比对germline序列 |                                 | germline_alignment     | germline_alignment      |                                | germline_alignment     |
+| vdj起止位点      |                                 | x_sequence_start/end   | x_sequence_start/end    | √                              | x_sequence_start       |
+| c起止位点        |                                 | c_sequence_start       |                         |                                |                        |
+| cdr起止位点      |                                 |                        | cdrx_start/end          |                                |                        |
+| 错配数           |                                 |                        |                         | √                              |                        |
+| gap数            |                                 |                        |                         | √                              |                        |
+
+
 # 常见问题
 
 ## 软件版本

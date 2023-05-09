@@ -3,6 +3,9 @@ pip_dir = os.getcwd()
 configfile: f'{pip_dir}/sample_config/test.yaml'
 
 
+# argument
+species = config['species']
+
 # software
 cellranger = config['cellranger']
 
@@ -16,6 +19,7 @@ Pstat=f'{outdir}/0stat'
 Pqc=f'{outdir}/1qc'
 Pcount=f'{outdir}/2count'
 PmRNA=f'{outdir}/3parse/mRNA'
+PVDJB=f'{outdir}/3parse/VDJB'
 
 for p in [Pqc,Pcount]:
     os.makedirs(p, exist_ok=True)
@@ -39,6 +43,8 @@ rule all:
         VDJT_count_dir = [Pcount + f'/{sample}/{sample}-VDJT/outs' for sample in Lsample if config[sample]['VDJT']],
         # parse
         mRNA_csv = [PmRNA + f'/{sample}/mRNA.csv' for sample in Lsample if config[sample]['mRNA']],
+        VDJB_igblast_tsv = [PVDJB + f'/{sample}/igblast_airr.tsv' for sample in Lsample if config[sample]['VDJB']],
+        VDJB_changeo = [PVDJB + f'/{sample}/changeo_clone-pass.tsv' for sample in Lsample if config[sample]['VDJB']],
 
 rule notebook_init:
     input: 
@@ -137,6 +143,59 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
                 1>{log.o} 2>{log.e}
             cd -
             """
+
+    rule VDJB_igblast:
+        input: VDJB_count_dir = rules.VDJB_count.output.VDJB_count_dir
+        output:
+            VDJB_igblast_tsv = PVDJB + '/{sample}/igblast_airr.tsv',
+            VDJB_igblast_txt = PVDJB + '/{sample}/igblast_blast.txt',
+        log: e = Plog + '/VDJB_igblast/{sample}.e', o = Plog + '/VDJB_igblast/{sample}.o'
+        benchmark: Plog + '/VDJB_igblast/{sample}.bmk'
+        resources: cpus=Dresources['VDJB_igblast_cpus']
+        params: igblast_VDJB_ref_prefix = config['igblast_VDJB_ref_prefix']
+        conda: f'{pip_dir}/envs/VDJ.yaml'
+        shell:"""
+            igblastn -organism {species} -germline_db_V {params.igblast_VDJB_ref_prefix}V -domain_system imgt\\
+                -germline_db_D {params.igblast_VDJB_ref_prefix}D -germline_db_J {params.igblast_VDJB_ref_prefix}J \\
+                -show_translation -outfmt 19 -num_threads {resources.cpus} \\
+                -query {input.VDJB_count_dir}/all_contig.fasta \\
+                -out {output.VDJB_igblast_tsv} 1>{log.o} 2>{log.e}
+            igblastn -organism {species} -germline_db_V {params.igblast_VDJB_ref_prefix}V -domain_system imgt\\
+                -germline_db_D {params.igblast_VDJB_ref_prefix}D -germline_db_J {params.igblast_VDJB_ref_prefix}J \\
+                -show_translation -outfmt '7 std qseq sseq btop' -num_threads {resources.cpus} \\
+                -query {input.VDJB_count_dir}/all_contig.fasta \\
+                -out {output.VDJB_igblast_txt} 1>{log.o} 2>{log.e}
+            """
+
+    rule VDJB_changeo:
+        input:
+            VDJB_count_dir = rules.VDJB_count.output.VDJB_count_dir,
+            VDJB_igblast_txt = rules.VDJB_igblast.output.VDJB_igblast_txt
+        output: 
+            VDJB_changeo_db = PVDJB + '/{sample}/changeo_db-pass.tsv',
+            VDJB_changeo = PVDJB + '/{sample}/changeo_clone-pass.tsv',
+        log: e = Plog + '/VDJB_changeo/{sample}.e', o = Plog + '/VDJB_changeo/{sample}.o'
+        benchmark: Plog + '/VDJB_changeo/{sample}.bmk'
+        resources: cpus=Dresources['VDJB_changeo_cpus']
+        conda: f'{pip_dir}/envs/VDJ.yaml'
+        params: 
+            changeo_VB_ref = config['changeo_VB_ref'],
+            changeo_DB_ref = config['changeo_DB_ref'],
+            changeo_JB_ref = config['changeo_JB_ref'],
+            outdir = PVDJB + '/{sample}'
+        shell:"""
+            MakeDb.py igblast -i {input.VDJB_igblast_txt} -r {params.changeo_VB_ref} {params.changeo_DB_ref} {params.changeo_JB_ref} \\
+                -s {input.VDJB_count_dir}/all_contig.fasta \\
+                --outdir {params.outdir} --outname changeo --regions default \\
+                --failed --partial --format airr --extended --log {log.o} 2>{log.e}
+            
+            DefineClones.py -d {output.VDJB_changeo_db} --outdir {params.outdir} --failed --act set --nproc {resources.cpus}\\
+                --outname changeo --model ham --norm len --dist 0.15 1>{log.o} 2>{log.e}
+            
+            # in case all contigs are failed
+            touch {output.VDJB_changeo}
+            """
+
 
 
 ##################################

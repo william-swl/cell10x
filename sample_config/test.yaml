@@ -40,6 +40,8 @@ Dresources:
     VDJB_count_cpus: 2
     VDJT_count_cpus: 2
     mRNA_parse_cpus: 2
+    VDJB_igblast_cpus: 2
+    VDJB_changeo_cpus: 2
 
 
 ##############################
@@ -58,4 +60,20 @@ vdj_ref: !!python/object/apply:os.path.join [*srcdir, *vdj_ref_dir]
 
 # celltype reference
 celltype_ref_file: &celltype_ref_file !!python/object/apply:pyutils.list_join [*species, ".rds"]
-celltype_ref: !!python/object/apply:os.path.join [*srcdir, 'celltype_ref', *celltype_ref_file]
+celltype_ref: !!python/object/apply:os.path.join [*srcdir, 'celltype-ref', *celltype_ref_file]
+
+# igblast reference
+igblast_VDJB_ref_prefix_part1: &igblast_VDJB_ref_prefix_part1 !!python/object/apply:pyutils.list_join [*species, "-VDJB"]
+igblast_VDJB_ref_prefix_part2: &igblast_VDJB_ref_prefix_part2 !!python/object/apply:pyutils.list_join [*species, "_gl_"]
+igblast_VDJB_ref_prefix: !!python/object/apply:os.path.join [*srcdir, 'igblast-ref', *igblast_VDJB_ref_prefix_part1, *igblast_VDJB_ref_prefix_part2]
+igblast_VDJT_ref_prefix_part1: &igblast_VDJT_ref_prefix_part1 !!python/object/apply:pyutils.list_join [*species, "-VDJT"]
+igblast_VDJT_ref_prefix_part2: &igblast_VDJT_ref_prefix_part2 !!python/object/apply:pyutils.list_join [*species, "_gl_"]
+igblast_VDJT_ref_prefix: !!python/object/apply:os.path.join [*srcdir, 'igblast-ref', *igblast_VDJT_ref_prefix_part1, *igblast_VDJT_ref_prefix_part2]
+
+# changeo reference
+changeo_VB_ref: !!python/object/apply:os.path.join [*srcdir, 'igblast-ref', *igblast_VDJB_ref_prefix_part1, 'IGV.fasta']
+changeo_DB_ref: !!python/object/apply:os.path.join [*srcdir, 'igblast-ref', *igblast_VDJB_ref_prefix_part1, 'IGD.fasta']
+changeo_JB_ref: !!python/object/apply:os.path.join [*srcdir, 'igblast-ref', *igblast_VDJB_ref_prefix_part1, 'IGJ.fasta']
+changeo_VT_ref: !!python/object/apply:os.path.join [*srcdir, 'igblast-ref', *igblast_VDJT_ref_prefix_part1, 'TRV.fasta']
+changeo_DT_ref: !!python/object/apply:os.path.join [*srcdir, 'igblast-ref', *igblast_VDJT_ref_prefix_part1, 'TRD.fasta']
+changeo_JT_ref: !!python/object/apply:os.path.join [*srcdir, 'igblast-ref', *igblast_VDJT_ref_prefix_part1, 'TRJ.fasta']
