@@ -41,7 +41,9 @@ Dresources:
     VDJT_count_cpus: 2
     mRNA_parse_cpus: 2
     VDJB_igblast_cpus: 2
+    VDJT_igblast_cpus: 2
     VDJB_changeo_cpus: 2
+    VDJT_changeo_cpus: 2
 
 
 ##############################

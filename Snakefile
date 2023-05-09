@@ -20,6 +20,7 @@ Pqc=f'{outdir}/1qc'
 Pcount=f'{outdir}/2count'
 PmRNA=f'{outdir}/3parse/mRNA'
 PVDJB=f'{outdir}/3parse/VDJB'
+PVDJT=f'{outdir}/3parse/VDJT'
 
 for p in [Pqc,Pcount]:
     os.makedirs(p, exist_ok=True)
@@ -45,6 +46,8 @@ rule all:
         mRNA_csv = [PmRNA + f'/{sample}/mRNA.csv' for sample in Lsample if config[sample]['mRNA']],
         VDJB_igblast_tsv = [PVDJB + f'/{sample}/igblast_airr.tsv' for sample in Lsample if config[sample]['VDJB']],
         VDJB_changeo = [PVDJB + f'/{sample}/changeo_clone-pass.tsv' for sample in Lsample if config[sample]['VDJB']],
+        VDJT_igblast_tsv = [PVDJT + f'/{sample}/igblast_airr.tsv' for sample in Lsample if config[sample]['VDJT']],
+        VDJT_changeo = [PVDJT + f'/{sample}/changeo_clone-pass.tsv' for sample in Lsample if config[sample]['VDJT']],
 
 rule notebook_init:
     input: 
@@ -220,4 +223,56 @@ if lambda wildcards:config[wildcards.sample]['VDJT']:
                 --localcores {resources.cpus} --mempercore 4 \\
                 1>{log.o} 2>{log.e}
             cd -
+            """
+
+    rule VDJT_igblast:
+        input: VDJT_count_dir = rules.VDJT_count.output.VDJT_count_dir
+        output:
+            VDJT_igblast_tsv = PVDJT + '/{sample}/igblast_airr.tsv',
+            VDJT_igblast_txt = PVDJT + '/{sample}/igblast_blast.txt',
+        log: e = Plog + '/VDJT_igblast/{sample}.e', o = Plog + '/VDJT_igblast/{sample}.o'
+        benchmark: Plog + '/VDJT_igblast/{sample}.bmk'
+        resources: cpus=Dresources['VDJT_igblast_cpus']
+        params: igblast_VDJT_ref_prefix = config['igblast_VDJT_ref_prefix']
+        conda: f'{pip_dir}/envs/VDJ.yaml'
+        shell:"""
+            igblastn -organism {species} -germline_db_V {params.igblast_VDJT_ref_prefix}V -domain_system imgt\\
+                -germline_db_D {params.igblast_VDJT_ref_prefix}D -germline_db_J {params.igblast_VDJT_ref_prefix}J \\
+                -show_translation -outfmt 19 -num_threads {resources.cpus} \\
+                -query {input.VDJT_count_dir}/all_contig.fasta \\
+                -out {output.VDJT_igblast_tsv} 1>{log.o} 2>{log.e}
+            igblastn -organism {species} -germline_db_V {params.igblast_VDJT_ref_prefix}V -domain_system imgt\\
+                -germline_db_D {params.igblast_VDJT_ref_prefix}D -germline_db_J {params.igblast_VDJT_ref_prefix}J \\
+                -show_translation -outfmt '7 std qseq sseq btop' -num_threads {resources.cpus} \\
+                -query {input.VDJT_count_dir}/all_contig.fasta \\
+                -out {output.VDJT_igblast_txt} 1>{log.o} 2>{log.e}
+            """
+
+    rule VDJT_changeo:
+        input:
+            VDJT_count_dir = rules.VDJT_count.output.VDJT_count_dir,
+            VDJT_igblast_txt = rules.VDJT_igblast.output.VDJT_igblast_txt
+        output: 
+            VDJT_changeo_db = PVDJT + '/{sample}/changeo_db-pass.tsv',
+            VDJT_changeo = PVDJT + '/{sample}/changeo_clone-pass.tsv',
+        log: e = Plog + '/VDJT_changeo/{sample}.e', o = Plog + '/VDJT_changeo/{sample}.o'
+        benchmark: Plog + '/VDJT_changeo/{sample}.bmk'
+        resources: cpus=Dresources['VDJT_changeo_cpus']
+        conda: f'{pip_dir}/envs/VDJ.yaml'
+        params: 
+            changeo_VT_ref = config['changeo_VT_ref'],
+            changeo_DT_ref = config['changeo_DT_ref'],
+            changeo_JT_ref = config['changeo_JT_ref'],
+            outdir = PVDJT + '/{sample}'
+        shell:"""
+            MakeDb.py igblast -i {input.VDJT_igblast_txt} -r {params.changeo_VT_ref} {params.changeo_DT_ref} {params.changeo_JT_ref} \\
+                -s {input.VDJT_count_dir}/all_contig.fasta \\
+                --outdir {params.outdir} --outname changeo --regions default \\
+                --failed --partial --format airr --extended --log {log.o} 2>{log.e}
+            
+            DefineClones.py -d {output.VDJT_changeo_db} --outdir {params.outdir} --failed --act set --nproc {resources.cpus}\\
+                --outname changeo --model ham --norm len --dist 0.15 1>{log.o} 2>{log.e}
+            
+            # in case all contigs are failed
+            touch {output.VDJT_changeo}
             """
