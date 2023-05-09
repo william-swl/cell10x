@@ -22,6 +22,14 @@ test:
   celltype_ref_tissue: common
 
 
+##############################
+######## Default Variables
+##############################
+# mRNA parse
+Nmin_cell_to_keep_gene: 100
+Nmin_gene_to_keep_cell: 100
+celltype_ref_tissue: immune
+Ndim_umap_use: 30
 
 ##############################
 ######## Resources
@@ -32,17 +40,6 @@ Dresources:
     VDJB_count_cpus: 2
     VDJT_count_cpus: 2
     mRNA_parse_cpus: 2
-
-##############################
-######## Default Variables
-##############################
-# mRNA parse
-Nmin_cell_to_keep_gene: 100
-Nmin_gene_to_keep_cell: 100
-celltype_ref_tissue: immune
-Ndim_umap_use: 30
-
-
 
 
 ##############################
