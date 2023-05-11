@@ -53,6 +53,7 @@ rule all:
         # parse VDJT
         VDJT_igblast_tsv = [PVDJT + f'/{sample}/igblast_airr.tsv' for sample in Lsample if config[sample]['VDJT']],
         VDJT_changeo = [PVDJT + f'/{sample}/changeo_clone-pass.tsv' for sample in Lsample if config[sample]['VDJT']],
+        VDJT_csv = [PVDJT + f'/{sample}/VDJT.csv' for sample in Lsample if config[sample]['VDJT']],
 
 rule notebook_init:
     input: 
@@ -291,65 +292,14 @@ if lambda wildcards:config[wildcards.sample]['VDJT']:
             cd -
             """
 
-    rule VDJT_igblast:
-        input: VDJT_count_dir = rules.VDJT_count.output.VDJT_count_dir
-        output:
-            VDJT_orf_nt_fa = PVDJT + '/{sample}/seq_orf_nt.fasta',
-            VDJT_igblast_tsv = PVDJT + '/{sample}/igblast_airr.tsv',
-            VDJT_igblast_txt = PVDJT + '/{sample}/igblast_blast.txt',
-        log: e = Plog + '/VDJT_igblast/{sample}.e', o = Plog + '/VDJT_igblast/{sample}.o'
-        benchmark: Plog + '/VDJT_igblast/{sample}.bmk'
-        resources: cpus=Dresources['VDJT_igblast_cpus']
-        params: igblast_VDJT_ref_prefix = config['igblast_VDJT_ref_prefix']
-        conda: f'{pip_dir}/envs/VDJ.yaml'
-        shell:"""
-            # fetch sequences in ORF
-            R -e " \
-                x <- readr::read_tsv('{input.VDJT_count_dir}/airr_rearrangement.tsv'); \
-                genogamesh::parse_CellRanger_vdjseq(x, file='{output.VDJT_orf_nt_fa}', fa_content='seq_orf_nt') \
-                " 1>>{log.o} 2>>{log.e}
-            
-            # airr format
-            igblastn -organism {species} -germline_db_V {params.igblast_VDJT_ref_prefix}V -domain_system imgt\\
-                -germline_db_D {params.igblast_VDJT_ref_prefix}D -germline_db_J {params.igblast_VDJT_ref_prefix}J \\
-                -show_translation -outfmt 19 -num_threads {resources.cpus} \\
-                -query {output.VDJT_orf_nt_fa} \\
-                -out {output.VDJT_igblast_tsv} 1>>{log.o} 2>>{log.e}
-            
-            # blast format
-            igblastn -organism {species} -germline_db_V {params.igblast_VDJT_ref_prefix}V -domain_system imgt\\
-                -germline_db_D {params.igblast_VDJT_ref_prefix}D -germline_db_J {params.igblast_VDJT_ref_prefix}J \\
-                -show_translation -outfmt '7 std qseq sseq btop' -num_threads {resources.cpus} \\
-                -query {output.VDJT_orf_nt_fa} \\
-                -out {output.VDJT_igblast_txt} 1>>{log.o} 2>>{log.e}
-            """
-
-    rule VDJT_changeo:
+    rule VDJT_parse:
         input:
-            VDJT_orf_nt_fa = rules.VDJT_igblast.output.VDJT_orf_nt_fa,
             VDJT_count_dir = rules.VDJT_count.output.VDJT_count_dir,
-            VDJT_igblast_txt = rules.VDJT_igblast.output.VDJT_igblast_txt
-        output: 
-            VDJT_changeo_db = PVDJT + '/{sample}/changeo_db-pass.tsv',
-            VDJT_changeo = PVDJT + '/{sample}/changeo_clone-pass.tsv',
-        log: e = Plog + '/VDJT_changeo/{sample}.e', o = Plog + '/VDJT_changeo/{sample}.o'
-        benchmark: Plog + '/VDJT_changeo/{sample}.bmk'
-        resources: cpus=Dresources['VDJT_changeo_cpus']
+        output:
+            VDJT_csv = PVDJT + '/{sample}/VDJT.csv',
+            VDJT_stat = PVDJT + '/{sample}/VDJT_stat.yaml'
+        log: notebook = Plog + '/VDJT_parse/{sample}.r.ipynb', e = Plog + '/VDJT_parse/{sample}.e', o = Plog + '/VDJT_parse/{sample}.o'
+        benchmark: Plog + '/VDJT_parse/{sample}.bmk'
+        resources: cpus=Dresources['VDJT_parse_cpus']
         conda: f'{pip_dir}/envs/VDJ.yaml'
-        params: 
-            changeo_VT_ref = config['changeo_VT_ref'],
-            changeo_DT_ref = config['changeo_DT_ref'],
-            changeo_JT_ref = config['changeo_JT_ref'],
-            outdir = PVDJT + '/{sample}'
-        shell:"""
-            MakeDb.py igblast -i {input.VDJT_igblast_txt} -r {params.changeo_VT_ref} {params.changeo_DT_ref} {params.changeo_JT_ref} \\
-                -s {input.VDJT_orf_nt_fa} \\
-                --outdir {params.outdir} --outname changeo --regions default \\
-                --failed --partial --format airr --extended --log {log.o} 2>>{log.e}
-            
-            DefineClones.py -d {output.VDJT_changeo_db} --outdir {params.outdir} --failed --act set --nproc {resources.cpus}\\
-                --outname changeo --model ham --norm len --dist 0.15 1>>{log.o} 2>>{log.e}
-            
-            # in case all contigs are failed
-            touch {output.VDJT_changeo}
-            """
+        notebook: rules.notebook_init.output.VDJT_parse_r
