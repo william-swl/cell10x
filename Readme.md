@@ -130,43 +130,41 @@ rawdata/
 
 ## VDJ
 
-1. `CellRanger vdj`的输出中，`airr_rearrangement.tsv`可以提取出从起始密码子开始的核酸序列，因此先产生`seq_orf_nt.fasta`，后续分析基于此序列。`all_contig_annotations.csv`里有reads和umis信息，留待整合。其他的注释信息`IgBlast`的输出也会给且更详细，最终都采用`IgBlast`的结果
-2. 对`seq_orf_nt.fasta`使用`IgBlast`，指定IMGT编号系统，输出`airr`格式用于获取主要的VDJ注释，输出`blast`格式用于获取mismatch计算SHM
-3. 使用`Change-O`，输出`changeo_clone-pass.tsv`用于获取克隆信息
-4. 使用`ANARCI`，输入氨基酸序列，指定Chothia编号系统，获取CDR的氨基酸序列
-4. 整合以上信息
+1. `CellRanger vdj`的输出中，`airr_rearrangement.tsv`可以提取出从起始密码子开始的核酸序列，因此先产生 `seq_orf_nt.fasta`，后续分析基于此序列。`all_contig_annotations.csv`里有reads和umis信息，留待整合。其他的注释信息 `IgBlast`的输出也会给且更详细，最终都采用 `IgBlast`的结果
+2. 对 `seq_orf_nt.fasta`使用 `IgBlast`，指定IMGT编号系统，输出 `airr`格式用于获取主要的VDJ注释，输出 `blast`格式用于获取mismatch计算SHM
+3. 使用 `Change-O`，输出 `changeo_clone-pass.tsv`用于获取克隆信息
+4. 使用 `ANARCI`，输入氨基酸序列，获取额外编号系统下的CDR氨基酸序列（默认为Chothia）。而且由于 `ANARCI`输出的V-domain氨基酸序列比 `IgBlast`输出的更完整，用于结果中的 `seq_align_aa`
+5. 整合以上信息
 
-
-
-| 项目             | 1                               | 2                      | 3                       | 4                              | 5                      |
-| ---------------- | ------------------------------- | ---------------------- | ----------------------- | ------------------------------ | ---------------------- |
-| 软件             | CellRanger                      | CellRanger             | IgBlast                 | IgBlast                        | Change-O               |
-| 输出文件名       | all_contig_annotations.csv | airr_rearrangement.tsv | -outfmt 19              | -outfmt '7 std qseq sseq btop' | changeo_clone-pass.tsv |
-| contig id        | contig_id                       | sequence_id            | sequence_id             | Query                          | sequence_id            |
-| contig类型       | chain                           |                        | locus                   |                                | locus                  |
-| vdj基因          | v_gene                          | x_call                 |                         |                                |                        |
-| 详细vdj基因      |                                 |                        | x_call                  | √                             | x_call                 |
-| c基因            | c_gene                          | c_call                 |                         |                                | c_call                 |
-| vdj-nt序列       |                                 |                        | x_sequence_alignment    |                                |                        |
-| vdj-aa序列       |                                 |                        | x_sequence_alignment_aa |                                |                        |
-| cdr-aa序列       | cdrx                            |                        | cdrx_aa                 |                                |                        |
-| cdr-nt序列       | cdrx_nt                         |                        | cdrx                    |                                | cdrx                   |
-| fwr-aa序列       | fwrx                            |                        | fwrx_aa                 |                                |                        |
-| fwr-nt序列       | fwrx_nt                         |                        | fwrx                    |                                | fwrx                   |
-| np序列           |                                 |                        | np1/2                   |                                |                        |
-| reads            | reads                           |                        |                         |                                |                        |
-| umis             | umis                            |                        |                         |                                |                        |
-| clone            | raw_clonotype_id                | clone_id               |                         |                                | clone_id               |
-| 全长aa序列       |                                 | sequence_aa            |                         |                                |                        |
-| 全长nt序列       |                                 | sequence               | sequence                |                                | sequence               |
-| 比对aa序列       |                                 |                        | sequence_alignment_aa   |                                |                        |
-| 比对nt序列       |                                 | sequence_alignment     | sequence_alignment      |                                | sequence_alignment     |
-| 比对germline序列 |                                 | germline_alignment     | germline_alignment      |                                | germline_alignment     |
-| vdj起止位点      |                                 | x_sequence_start/end   | x_sequence_start/end    | √                             | x_sequence_start       |
-| c起止位点        |                                 | c_sequence_start       |                         |                                |                        |
-| cdr起止位点      |                                 |                        | cdrx_start/end          |                                |                        |
-| 错配数           |                                 |                        |                         | √                             |                        |
-| gap数            |                                 |                        |                         | √                             |                        |
+| 项目             | 1                          | 2                      | 3                       | 4                              | 5                      | 6            |
+| ---------------- | -------------------------- | ---------------------- | ----------------------- | ------------------------------ | ---------------------- | ------------ |
+| 软件             | Cellranger                 | Cellranger             | IgBlast                 | IgBlast                        | Change-O               | ANARCI       |
+| 输出文件名       | all_contig_annotations.csv | airr_rearrangement.tsv | -outfmt 19              | -outfmt '7 std qseq sseq btop' | changeo_clone-pass.tsv | anarci_H.csv |
+| contig id        | contig_id                  | sequence_id            | sequence_id             | Query                          | sequence_id            | id           |
+| contig类型       | chain                      |                        | locus                   |                                | locus                  | chain_type   |
+| vdj基因          | v_gene                     | x_call                 |                         |                                |                        |              |
+| 详细vdj基因      |                            |                        | x_call                  | √                             | x_call                 | x_gene       |
+| c基因            | c_gene                     | c_call                 |                         |                                | c_call                 |              |
+| vdj-nt序列       |                            |                        | x_sequence_alignment    |                                |                        |              |
+| vdj-aa序列       |                            |                        | x_sequence_alignment_aa |                                |                        | numbering    |
+| cdr-aa序列       | cdrx                       |                        | cdrx_aa                 |                                |                        |              |
+| cdr-nt序列       | cdrx_nt                    |                        | cdrx                    |                                | cdrx                   |              |
+| fwr-aa序列       | fwrx                       |                        | fwrx_aa                 |                                |                        |              |
+| fwr-nt序列       | fwrx_nt                    |                        | fwrx                    |                                | fwrx                   |              |
+| np序列           |                            |                        | np1/2                   |                                |                        |              |
+| reads            | reads                      |                        |                         |                                |                        |              |
+| umis             | umis                       |                        |                         |                                |                        |              |
+| clone            | raw_clonotype_id           | clone_id               |                         |                                | clone_id               |              |
+| 全长aa序列       |                            | sequence_aa            |                         |                                |                        |              |
+| 全长nt序列       |                            | sequence               | sequence                |                                | sequence               |              |
+| 比对aa序列       |                            |                        | sequence_alignment_aa   |                                |                        |              |
+| 比对nt序列       |                            | sequence_alignment     | sequence_alignment      |                                | sequence_alignment     |              |
+| 比对germline序列 |                            | germline_alignment     | germline_alignment      |                                | germline_alignment     |              |
+| vdj起止位点      |                            | x_sequence_start/end   | x_sequence_start/end    | √                             | x_sequence_start       |              |
+| c起止位点        |                            | c_sequence_start       |                         |                                |                        |              |
+| cdr起止位点      |                            |                        | cdrx_start/end          |                                |                        |              |
+| 错配数           |                            |                        |                         | √                             |                        |              |
+| gap数            |                            |                        |                         | √                             |                        |              |
 
 # 常见问题
 

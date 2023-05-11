@@ -197,6 +197,7 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
         output: 
             VDJB_changeo_db = PVDJB + '/{sample}/changeo_db-pass.tsv',
             VDJB_changeo = PVDJB + '/{sample}/changeo_clone-pass.tsv',
+            VDJB_changeo_fail = PVDJB + '/{sample}/changeo_clone-fail.tsv',
         log: e = Plog + '/VDJB_changeo/{sample}.e', o = Plog + '/VDJB_changeo/{sample}.o'
         benchmark: Plog + '/VDJB_changeo/{sample}.bmk'
         resources: cpus=Dresources['VDJB_changeo_cpus']
@@ -228,7 +229,7 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
         log: e = Plog + '/VDJB_anarci/{sample}.e', o = Plog + '/VDJB_anarci/{sample}.o'
         benchmark: Plog + '/VDJB_anarci/{sample}.bmk'
         resources: cpus=Dresources['VDJB_anarci_cpus']
-        params: outdir = PVDJB + '/{sample}'
+        params: outdir = PVDJB + '/{sample}', ext_numbering = config['ext_numbering']
         conda: f'{pip_dir}/envs/VDJ.yaml'
         shell:"""
             # fetch sequences in ORF
@@ -240,7 +241,7 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             # airr format
             cd {params.outdir}
             ANARCI -i {output.VDJB_orf_aa_fa} -o anarci -ht anarci_hittable.txt \\
-                --use_species {species} --restrict ig -s chothia --csv --ncpu {resources.cpus} \\
+                --use_species {species} --restrict ig -s {params.ext_numbering} --csv --ncpu {resources.cpus} \\
                 --assign_germline 1>>{log.o} 2>>{log.e}
             """
 
@@ -252,6 +253,9 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             VDJB_igblast_tsv = rules.VDJB_igblast.output.VDJB_igblast_tsv,
             VDJB_igblast_txt = rules.VDJB_igblast.output.VDJB_igblast_txt,
             VDJB_changeo = rules.VDJB_changeo.output.VDJB_changeo,
+            VDJB_changeo_fail = rules.VDJB_changeo.output.VDJB_changeo_fail,
+            VDJB_anarci_H = rules.VDJB_anarci.output.VDJB_anarci_H,
+            VDJB_anarci_KL = rules.VDJB_anarci.output.VDJB_anarci_KL,
             VDJB_parse_r = rules.notebook_init.output.VDJB_parse_r
         output:
             VDJB_csv = PVDJB + '/{sample}/VDJB.csv',
