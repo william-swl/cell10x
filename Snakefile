@@ -55,9 +55,9 @@ rule all:
         # parse VDJT
         VDJT_csv = [PVDJT + f'/{sample}/VDJT.csv' for sample in Lsample if config[sample]['VDJT']],
         # parse FB
-        FB_csv = [PFB + f'/{sample}/FB.csv' for sample in Lsample if config[sample]['FB']]
+        FB_csv = [PFB + f'/{sample}/FB.csv' for sample in Lsample if config[sample]['FB']],
         # filter
-        # filter_csv = expand(Pfilter + '/{sample}/filter.csv',sample=Lsample),
+        filter_stat = expand(Pfilter + '/{sample}/filter_stat.yaml', sample=Lsample)
 
 rule notebook_init:
     input: 
@@ -290,11 +290,11 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             MakeDb.py igblast -i {input.VDJB_igblast_txt} -r {params.changeo_VB_ref} {params.changeo_DB_ref} {params.changeo_JB_ref} \\
                 -s {input.VDJB_orf_nt_fa} \\
                 --outdir {params.outdir} --outname changeo --regions default \\
-                --failed --partial --format airr --extended --log {log.o} 2>>{log.e}
+                --failed --partial --format airr --extended 1>>{log.o} 2>>{log.e}
             
             DefineClones.py -d {output.VDJB_changeo_db} --outdir {params.outdir} --failed --act set --nproc {resources.cpus}\\
                 --outname changeo --model ham --norm len --dist 0.15 1>>{log.o} 2>>{log.e}
-            
+
             # in case all contigs are failed
             touch {output.VDJB_changeo}
             """
@@ -323,7 +323,6 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
                 --use_species {species} --restrict ig -s {params.ext_numbering} --csv --ncpu {resources.cpus} \\
                 --assign_germline 1>>{log.o} 2>>{log.e}
             """
-
 
 
     rule VDJB_parse:
@@ -406,10 +405,11 @@ rule filter:
         filter_r = rules.notebook_init.output.filter_r
     output:
         filter_dir = directory(Pfilter + '/{sample}'),
-        filter_csv = Pfilter + '/{sample}/filter.csv',
         filter_stat = Pfilter + '/{sample}/filter_stat.yaml'
+    params: stat_dir = Pstat + '/{sample}'
     log: notebook = Plog + '/filter/{sample}.r.ipynb', e = Plog + '/filter/{sample}.e', o = Plog + '/filter/{sample}.o'
     benchmark: Plog + '/filter/{sample}.bmk'
     resources: cpus=Dresources['filter_cpus']
     conda: f'{pip_dir}/envs/visualize.yaml'
     notebook: rules.notebook_init.output.filter_r
+

@@ -51,6 +51,12 @@ rawdata/
 - `Nratio_BD: 0.2`。某种BD占全部BD的比例，如果超过该数值，则在BD_type中添加此种BD
 - `Nratio_NC: 0.1`。NC占BD+NC的比例，如果高于此数值，则会被滤除
 
+
+## filter
+
+- `flt_mode`，过滤模式，形式是 `name: [lib1, lib2, ...]`。先将指定库的未过滤细胞取交集，然后应用所有库的过滤条件。如果mRNA库既有B细胞、也有T细胞，可以设置两个过滤模式分别处理
+
+
 # qc
 
 - 对 ` {indir}/{sample}/` 目录下的所有 `fastq.gz `或 `fq.gz`文件产生质控报告，涉及 `{sample}-mRNA_S..., {sample}-VDJB_S...`等

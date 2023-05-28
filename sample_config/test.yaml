@@ -5,7 +5,7 @@ indir: /home/william/pipeline/cell10x/test/rawdata
 outdir: /home/william/pipeline/cell10x/test/out
 srcdir: &srcdir /home/william/pipeline/cell10x/src
 Lsample:
-  - test
+  # - test
   - test2
 species: &species human
 
@@ -41,6 +41,9 @@ test2:
       BA2#2: CGTATGCGCTTCAAG
       WT#1: CAGCAACTTCATTGT
       WT#2: GGTATAAGAGCTACG
+  FB_corr:
+      BA2#1: 2
+      BA2#2: 2
 
 
 ##############################
@@ -65,11 +68,21 @@ Nratio_BD: 0.2
 Nratio_NC: 0.1
 
 # filter
-mRNA_gene_flt: 100
-mRNA_umi_flt: 100
+flt_mode:
+  Bcell:
+    - mRNA
+    - FB
+    - VDJB
+  Tcell:
+    - mRNA
+    - FB
+    - VDJT
+mRNA_gene_flt: 10
+mRNA_umi_flt: 10
 mRNA_mt_percent_flt: 10
 VDJB_umi_flt: 5
 VDJT_umi_flt: 5
+FB_umi_flt: 10
 
 ##############################
 ######## Resources
