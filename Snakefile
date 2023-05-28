@@ -54,6 +54,8 @@ rule all:
         VDJB_csv = [PVDJB + f'/{sample}/VDJB.csv' for sample in Lsample if config[sample]['VDJB']],
         # parse VDJT
         VDJT_csv = [PVDJT + f'/{sample}/VDJT.csv' for sample in Lsample if config[sample]['VDJT']],
+        # parse FB
+        FB_csv = [PFB + f'/{sample}/FB.csv' for sample in Lsample if config[sample]['FB']]
         # filter
         # filter_csv = expand(Pfilter + '/{sample}/filter.csv',sample=Lsample),
 

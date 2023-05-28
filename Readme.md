@@ -41,6 +41,16 @@ rawdata/
 - 在 `Resources`部分，指定运行时占用的cpu资源。每个cpu对应的内存数在 `~/.config/snakemake/cell10x/config.yaml`中指定
 - 在 `Constant`部分，指定一般不会改变的常量，例如索引文件的位置
 
+## Feature barcode
+
+- `HT：Hashtag`，用于区分细胞身份的标签，例如不同的实验组、不同的样本来源。理想情况下，每个细胞都有且仅有一种HT
+- `NC：Negative control`，阴性对照，例如OVA。理想情况下，细胞上不应该有NC
+- `BD：Binding`，抗原结合
+- `Nlim_HT: 10`。HT如果低于此数值，则标记该细胞为“low hashtag”
+- `Nratio_HT: 0.9`。主要HT占全部HT的最低比例，如果低于此数值，则该细胞标记为“mixed”
+- `Nratio_BD: 0.2`。某种BD占全部BD的比例，如果超过该数值，则在BD_type中添加此种BD
+- `Nratio_NC: 0.1`。NC占BD+NC的比例，如果高于此数值，则会被滤除
+
 # qc
 
 - 对 ` {indir}/{sample}/` 目录下的所有 `fastq.gz `或 `fq.gz`文件产生质控报告，涉及 `{sample}-mRNA_S..., {sample}-VDJB_S...`等
@@ -139,10 +149,10 @@ rawdata/
 7. 根据轻重链分别展开以上信息
 
 VDJT与VDJB的区别：
-1. 不再运行igblast、changeo、ANARCI，仅从`CellRanger`的结果取
-2. `seq_nt`不再从起始密码子开始，而是序列首端
-3. 由于`CellRanger`的输出就是这样，`seq_nt`和`seq_align_nt_H`完全一致
 
+1. 不再运行igblast、changeo、ANARCI，仅从 `CellRanger`的结果取
+2. `seq_nt`不再从起始密码子开始，而是序列首端
+3. 由于 `CellRanger`的输出就是这样，`seq_nt`和 `seq_align_nt_H`完全一致
 
 | 项目             | 1                          | 2                      | 3                       | 4                              | 5                      | 6            |
 | ---------------- | -------------------------- | ---------------------- | ----------------------- | ------------------------------ | ---------------------- | ------------ |
@@ -175,6 +185,7 @@ VDJT与VDJB的区别：
 | gap数            |                            |                        |                         | √                             |                        |              |
 
 # filter
+
 - 用于filter的列先进行初始化，如果值为NA修改为合适的值，使得未通过filter、没有测该库能够区分
 
 # 常见问题

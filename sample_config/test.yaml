@@ -59,7 +59,10 @@ ext_numbering: chothia
 FB_read: 'R2'
 FB_pattern: '5PNNNNNNNNNN(BC)'
 FB_type: 'Antibody Capture'
-Nfb_to_zero: 5
+Nlim_HT: 10
+Nratio_HT: 0.9
+Nratio_BD: 0.2
+Nratio_NC: 0.1
 
 # filter
 mRNA_gene_flt: 100
