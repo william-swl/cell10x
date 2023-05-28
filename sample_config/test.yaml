@@ -6,6 +6,7 @@ outdir: /home/william/pipeline/cell10x/test/out
 srcdir: &srcdir /home/william/pipeline/cell10x/src
 Lsample:
   - test
+  - test2
 species: &species human
 
 
@@ -15,11 +16,31 @@ species: &species human
 ##############################
 test:
   mRNA: True
+  FB: False
   VDJB: True
   VDJT: True
   Nmin_cell_to_keep_gene: 10
   Nmin_gene_to_keep_cell: 10
   celltype_ref_tissue: common
+
+test2:
+  mRNA: False
+  FB: True
+  VDJB: True
+  VDJT: False
+  Nmin_cell_to_keep_gene: 10
+  Nmin_gene_to_keep_cell: 10
+  id2seq:
+    HT: 
+      PRM: TGATGGCCTATTGGG
+      BTI: GTCAACTCTTTAGCG
+    NC: 
+      OVA: TGCCAGCCCTTTGTA
+    BD: 
+      BA2#1: ATGCGATCAGACCGA
+      BA2#2: CGTATGCGCTTCAAG
+      WT#1: CAGCAACTTCATTGT
+      WT#2: GGTATAAGAGCTACG
 
 
 ##############################
@@ -34,20 +55,36 @@ Ndim_umap_use: 30
 # VDJ parse
 ext_numbering: chothia
 
+# FB
+FB_read: 'R2'
+FB_pattern: '5PNNNNNNNNNN(BC)'
+FB_type: 'Antibody Capture'
+Nfb_to_zero: 5
+
+# filter
+mRNA_gene_flt: 100
+mRNA_umi_flt: 100
+mRNA_mt_percent_flt: 10
+VDJB_umi_flt: 5
+VDJT_umi_flt: 5
+
 ##############################
 ######## Resources
 ##############################
 Dresources:
     qc_cpus: 2
-    mRNA_count_cpus: 2
-    VDJB_count_cpus: 2
-    VDJT_count_cpus: 2
+    mRNA_count_cpus: 4
+    FB_count_cpus: 4
+    VDJB_count_cpus: 4
+    VDJT_count_cpus: 4
     mRNA_parse_cpus: 2
+    FB_parse_cpus: 2
     VDJB_igblast_cpus: 2
     VDJB_changeo_cpus: 2
     VDJB_anarci_cpus: 2
     VDJB_parse_cpus: 2
     VDJT_parse_cpus: 2
+    filter_cpus: 2
 
 
 
