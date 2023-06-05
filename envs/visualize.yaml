@@ -21,6 +21,8 @@ dependencies:
   - r-ggpubr
   - r-RColorBrewer
   - r-ggh4x
+  - r-echarts4r
+  - r-ggplotify
   - notebook
   - r-irkernel
   # for baizer

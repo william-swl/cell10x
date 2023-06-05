@@ -13,7 +13,6 @@ cellranger = config['cellranger']
 indir=config['indir']
 outdir=config['outdir']
 Lsample=config['Lsample']
-Dresources=config['Dresources']
 Plog=f'{outdir}/0log'
 Pstat=f'{outdir}/0stat'
 Pqc=f'{outdir}/1qc'
@@ -23,6 +22,7 @@ PFB=f'{outdir}/3parse/FB'
 PVDJB=f'{outdir}/3parse/VDJB'
 PVDJT=f'{outdir}/3parse/VDJT'
 Pfilter=f'{outdir}/4filter'
+Pvisualize=f'{outdir}/5visualize'
 
 
 
@@ -52,12 +52,15 @@ rule all:
         mRNA_csv = [PmRNA + f'/{sample}/mRNA.csv' for sample in Lsample if config[sample]['mRNA']],
         # parse VDJB
         VDJB_csv = [PVDJB + f'/{sample}/VDJB.csv' for sample in Lsample if config[sample]['VDJB']],
+        VDJB_tree = [PVDJB + f'/{sample}/changeo_clone-pass_germ-pass_igphyml-pass.tab' for sample in Lsample if config[sample]['VDJB']],
         # parse VDJT
         VDJT_csv = [PVDJT + f'/{sample}/VDJT.csv' for sample in Lsample if config[sample]['VDJT']],
         # parse FB
         FB_csv = [PFB + f'/{sample}/FB.csv' for sample in Lsample if config[sample]['FB']],
         # filter
-        filter_stat = expand(Pfilter + '/{sample}/filter_stat.yaml', sample=Lsample)
+        filter_stat = expand(Pfilter + '/{sample}/filter_stat.yaml', sample=Lsample),
+        # visualzie
+        visualize_touch = expand(Pvisualize + '/{sample}.txt', sample=Lsample)
 
 rule notebook_init:
     input: 
@@ -66,12 +69,14 @@ rule notebook_init:
         VDJB_parse_r='scripts/VDJB_parse.r.ipynb',
         VDJT_parse_r='scripts/VDJT_parse.r.ipynb',
         filter_r='scripts/filter.r.ipynb',
+        visualize_r='scripts/visualize.r.ipynb',
     output: 
         mRNA_parse_r=Plog + '/mRNA_parse.r.ipynb',
         FB_parse_r=Plog + '/FB_parse.r.ipynb',
         VDJB_parse_r=Plog + '/VDJB_parse.r.ipynb',
         VDJT_parse_r=Plog + '/VDJT_parse.r.ipynb',
         filter_r=Plog + '/filter.r.ipynb',
+        visualize_r=Plog + '/visualize.r.ipynb',
     resources: cpus=1
     log: e = Plog + '/notebook_init.e', o = Plog + '/notebook_init.o'
     run:
@@ -94,7 +99,7 @@ rule qc:
         qc_data = Pqc + '/{sample}/multiqc/{sample}_multiqc_report_data/multiqc_data.json'
     log: e = Plog + '/qc/{sample}.e', o = Plog + '/qc/{sample}.o'
     benchmark: Plog + '/qc/{sample}.bmk'
-    resources: cpus=Dresources['qc_cpus']
+    resources: cpus=config['qc_cpus']
     params: stat_dir = Pstat + '/{sample}/qc'
     conda: f'{pip_dir}/envs/upstream.yaml'
     shell:"""
@@ -116,7 +121,7 @@ if lambda wildcards:config[wildcards.sample]['mRNA']:
         params: gex_ref = config['gex_ref']
         log: e = Plog + '/mRNA_count/{sample}.e', o = Plog + '/mRNA_count/{sample}.o'
         benchmark: Plog + '/mRNA_count/{sample}.bmk'
-        resources: cpus=Dresources['mRNA_count_cpus']
+        resources: cpus=config['mRNA_count_cpus']
         conda: f'{pip_dir}/envs/upstream.yaml'
         shell:"""
             cd {Pcount}/{wildcards.sample}
@@ -141,7 +146,7 @@ if lambda wildcards:config[wildcards.sample]['mRNA']:
             stat_dir = directory(Pstat + '/{sample}/mRNA')
         log: notebook = Plog + '/mRNA_parse/{sample}.r.ipynb', e = Plog + '/mRNA_parse/{sample}.e', o = Plog + '/mRNA_parse/{sample}.o'
         benchmark: Plog + '/mRNA_parse/{sample}.bmk'
-        resources: cpus=Dresources['mRNA_parse_cpus']
+        resources: cpus=config['mRNA_parse_cpus']
         conda: f'{pip_dir}/envs/RNA.yaml'
         notebook: rules.notebook_init.output.mRNA_parse_r
 
@@ -181,7 +186,7 @@ if lambda wildcards:config[wildcards.sample]['FB']:
         output: FB_count_dir = directory(Pcount + '/{sample}/{sample}-FB/outs')
         log: e = Plog + '/FB_count/{sample}.e', o = Plog + '/FB_count/{sample}.o'
         benchmark: Plog + '/FB_count/{sample}.bmk'
-        resources: cpus=Dresources['FB_count_cpus']
+        resources: cpus=config['FB_count_cpus']
         params: gex_ref = config['gex_ref']
         conda: f'{pip_dir}/envs/upstream.yaml'
         shell:"""
@@ -206,7 +211,7 @@ if lambda wildcards:config[wildcards.sample]['FB']:
             stat_dir = directory(Pstat + '/{sample}/FB')
         log: notebook = Plog + '/FB_parse/{sample}.r.ipynb', e = Plog + '/FB_parse/{sample}.e', o = Plog + '/FB_parse/{sample}.o'
         benchmark: Plog + '/FB_parse/{sample}.bmk'
-        resources: cpus=Dresources['FB_parse_cpus']
+        resources: cpus=config['FB_parse_cpus']
         conda: f'{pip_dir}/envs/RNA.yaml'
         notebook: rules.notebook_init.output.FB_parse_r
 
@@ -221,7 +226,7 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
         params: vdj_ref = config['vdj_ref']
         log: e = Plog + '/VDJB_count/{sample}.e', o = Plog + '/VDJB_count/{sample}.o'
         benchmark: Plog + '/VDJB_count/{sample}.bmk'
-        resources: cpus=Dresources['VDJB_count_cpus']
+        resources: cpus=config['VDJB_count_cpus']
         conda: f'{pip_dir}/envs/upstream.yaml'
         shell:"""
             cd {Pcount}/{wildcards.sample}
@@ -243,8 +248,10 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             VDJB_igblast_txt = PVDJB + '/{sample}/igblast_blast.txt',
         log: e = Plog + '/VDJB_igblast/{sample}.e', o = Plog + '/VDJB_igblast/{sample}.o'
         benchmark: Plog + '/VDJB_igblast/{sample}.bmk'
-        resources: cpus=Dresources['VDJB_igblast_cpus']
-        params: igblast_VDJB_ref_prefix = config['igblast_VDJB_ref_prefix']
+        resources: cpus=config['VDJB_igblast_cpus']
+        params: 
+            igblast_VDJB_ref_prefix = config['igblast_VDJB_ref_prefix'],
+            igblast_aux = config['igblast_aux']
         conda: f'{pip_dir}/envs/VDJ.yaml'
         shell:"""
             # fetch sequences in ORF
@@ -256,6 +263,7 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             # airr format
             igblastn -organism {species} -germline_db_V {params.igblast_VDJB_ref_prefix}V -domain_system imgt\\
                 -germline_db_D {params.igblast_VDJB_ref_prefix}D -germline_db_J {params.igblast_VDJB_ref_prefix}J \\
+                -auxiliary_data {params.igblast_aux} \\
                 -show_translation -outfmt 19 -num_threads {resources.cpus} \\
                 -query {output.VDJB_orf_nt_fa} \\
                 -out {output.VDJB_igblast_tsv} 1>>{log.o} 2>>{log.e}
@@ -263,6 +271,7 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             # blast format
             igblastn -organism {species} -germline_db_V {params.igblast_VDJB_ref_prefix}V -domain_system imgt\\
                 -germline_db_D {params.igblast_VDJB_ref_prefix}D -germline_db_J {params.igblast_VDJB_ref_prefix}J \\
+                -auxiliary_data {params.igblast_aux} \\
                 -show_translation -outfmt '7 std qseq sseq btop' -num_threads {resources.cpus} \\
                 -query {output.VDJB_orf_nt_fa} \\
                 -out {output.VDJB_igblast_txt} 1>>{log.o} 2>>{log.e}
@@ -279,7 +288,7 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             VDJB_changeo_fail = PVDJB + '/{sample}/changeo_clone-fail.tsv',
         log: e = Plog + '/VDJB_changeo/{sample}.e', o = Plog + '/VDJB_changeo/{sample}.o'
         benchmark: Plog + '/VDJB_changeo/{sample}.bmk'
-        resources: cpus=Dresources['VDJB_changeo_cpus']
+        resources: cpus=config['VDJB_changeo_cpus']
         conda: f'{pip_dir}/envs/VDJ.yaml'
         params: 
             changeo_VB_ref = config['changeo_VB_ref'],
@@ -287,17 +296,42 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             changeo_JB_ref = config['changeo_JB_ref'],
             outdir = PVDJB + '/{sample}'
         shell:"""
-            MakeDb.py igblast -i {input.VDJB_igblast_txt} -r {params.changeo_VB_ref} {params.changeo_DB_ref} {params.changeo_JB_ref} \\
-                -s {input.VDJB_orf_nt_fa} \\
-                --outdir {params.outdir} --outname changeo --regions default \\
+            MakeDb.py igblast -i {input.VDJB_igblast_txt} \\
+                -r {params.changeo_VB_ref} {params.changeo_DB_ref} {params.changeo_JB_ref} \\
+                -s {input.VDJB_orf_nt_fa} --outname changeo --regions default \\
                 --failed --partial --format airr --extended 1>>{log.o} 2>>{log.e}
             
-            DefineClones.py -d {output.VDJB_changeo_db} --outdir {params.outdir} --failed --act set --nproc {resources.cpus}\\
+            DefineClones.py -d {output.VDJB_changeo_db} --failed --act set --nproc {resources.cpus}\\
                 --outname changeo --model ham --norm len --dist 0.15 1>>{log.o} 2>>{log.e}
 
             # in case all contigs are failed
             touch {output.VDJB_changeo}
             """
+
+    rule VDJB_tree:
+        input:
+            VDJB_changeo = rules.VDJB_changeo.output.VDJB_changeo,
+        output:
+            VDJB_changeo_gm  = PVDJB + '/{sample}/changeo_clone-pass_germ-pass.tsv',
+            VDJB_tree = PVDJB + '/{sample}/changeo_clone-pass_germ-pass_igphyml-pass.tab',
+        log: e = Plog + '/VDJB_tree/{sample}.e', o = Plog + '/VDJB_tree/{sample}.o'
+        benchmark: Plog + '/VDJB_tree/{sample}.bmk'
+        resources: cpus=config['VDJB_tree_cpus']
+        conda: f'{pip_dir}/envs/VDJ.yaml'
+        params: 
+            changeo_VB_ref = config['changeo_VB_ref'],
+            changeo_DB_ref = config['changeo_DB_ref'],
+            changeo_JB_ref = config['changeo_JB_ref'],
+            outdir = PVDJB + '/{sample}'
+        shell:"""
+            CreateGermlines.py -d {input.VDJB_changeo} -g dmask --cloned \\
+                -r {params.changeo_VB_ref} {params.changeo_DB_ref} {params.changeo_JB_ref} \\
+                1>>{log.o} 2>>{log.e}
+
+            BuildTrees.py -d {output.VDJB_changeo_gm} --collapse \\
+                --sample 3000 --igphyml --clean all --nproc {resources.cpus} \\
+                1>>{log.o} 2>>{log.e}
+        """
 
     rule VDJB_anarci:
         input: VDJB_count_dir = rules.VDJB_count.output.VDJB_count_dir
@@ -307,7 +341,7 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             VDJB_anarci_KL = PVDJB + '/{sample}/anarci_KL.csv',
         log: e = Plog + '/VDJB_anarci/{sample}.e', o = Plog + '/VDJB_anarci/{sample}.o'
         benchmark: Plog + '/VDJB_anarci/{sample}.bmk'
-        resources: cpus=Dresources['VDJB_anarci_cpus']
+        resources: cpus=config['VDJB_anarci_cpus']
         params: outdir = PVDJB + '/{sample}', ext_numbering = config['ext_numbering']
         conda: f'{pip_dir}/envs/VDJ.yaml'
         shell:"""
@@ -341,7 +375,7 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             stat_dir = directory(Pstat + '/{sample}/VDJB')
         log: notebook = Plog + '/VDJB_parse/{sample}.r.ipynb', e = Plog + '/VDJB_parse/{sample}.e', o = Plog + '/VDJB_parse/{sample}.o'
         benchmark: Plog + '/VDJB_parse/{sample}.bmk'
-        resources: cpus=Dresources['VDJB_parse_cpus']
+        resources: cpus=config['VDJB_parse_cpus']
         conda: f'{pip_dir}/envs/VDJ.yaml'
         notebook: rules.notebook_init.output.VDJB_parse_r
 
@@ -356,7 +390,7 @@ if lambda wildcards:config[wildcards.sample]['VDJT']:
         params: vdj_ref = config['vdj_ref']
         log: e = Plog + '/VDJT_count/{sample}.e', o = Plog + '/VDJT_count/{sample}.o'
         benchmark: Plog + '/VDJT_count/{sample}.bmk'
-        resources: cpus=Dresources['VDJT_count_cpus']
+        resources: cpus=config['VDJT_count_cpus']
         conda: f'{pip_dir}/envs/upstream.yaml'
         shell:"""
             cd {Pcount}/{wildcards.sample}
@@ -380,7 +414,7 @@ if lambda wildcards:config[wildcards.sample]['VDJT']:
             stat_dir = directory(Pstat + '/{sample}/VDJT')
         log: notebook = Plog + '/VDJT_parse/{sample}.r.ipynb', e = Plog + '/VDJT_parse/{sample}.e', o = Plog + '/VDJT_parse/{sample}.o'
         benchmark: Plog + '/VDJT_parse/{sample}.bmk'
-        resources: cpus=Dresources['VDJT_parse_cpus']
+        resources: cpus=config['VDJT_parse_cpus']
         conda: f'{pip_dir}/envs/VDJ.yaml'
         notebook: rules.notebook_init.output.VDJT_parse_r
 
@@ -409,7 +443,22 @@ rule filter:
     params: stat_dir = Pstat + '/{sample}'
     log: notebook = Plog + '/filter/{sample}.r.ipynb', e = Plog + '/filter/{sample}.e', o = Plog + '/filter/{sample}.o'
     benchmark: Plog + '/filter/{sample}.bmk'
-    resources: cpus=Dresources['filter_cpus']
+    resources: cpus=config['filter_cpus']
     conda: f'{pip_dir}/envs/visualize.yaml'
     notebook: rules.notebook_init.output.filter_r
 
+##################################
+### visualize
+##################################
+
+rule visualize:
+    input:
+        filter_dir = rules.filter.output.filter_dir,
+        stat_dir = Pstat + '/{sample}'
+    output:
+        visualize_touch = Pvisualize + '/{sample}.txt'
+    log: notebook = Plog + '/visualize/{sample}.r.ipynb', e = Plog + '/visualize/{sample}.e', o = Plog + '/visualize/{sample}.o'
+    benchmark: Plog + '/visualize/{sample}.bmk'
+    resources: cpus=config['visualize_cpus']
+    conda: f'{pip_dir}/envs/visualize.yaml'
+    notebook: rules.notebook_init.output.visualize_r

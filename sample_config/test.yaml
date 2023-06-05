@@ -87,21 +87,21 @@ FB_umi_flt: 10
 ##############################
 ######## Resources
 ##############################
-Dresources:
-    qc_cpus: 2
-    mRNA_count_cpus: 4
-    FB_count_cpus: 4
-    VDJB_count_cpus: 4
-    VDJT_count_cpus: 4
-    mRNA_parse_cpus: 2
-    FB_parse_cpus: 2
-    VDJB_igblast_cpus: 2
-    VDJB_changeo_cpus: 2
-    VDJB_anarci_cpus: 2
-    VDJB_parse_cpus: 2
-    VDJT_parse_cpus: 2
-    filter_cpus: 2
-
+qc_cpus: 2
+mRNA_count_cpus: 4
+FB_count_cpus: 4
+VDJB_count_cpus: 4
+VDJT_count_cpus: 4
+mRNA_parse_cpus: 2
+FB_parse_cpus: 2
+VDJB_igblast_cpus: 2
+VDJB_changeo_cpus: 2
+VDJB_tree_cpus: 4
+VDJB_anarci_cpus: 2
+VDJB_parse_cpus: 2
+VDJT_parse_cpus: 2
+filter_cpus: 2
+visualize_cpus: 2
 
 
 ##############################
@@ -137,3 +137,7 @@ changeo_JB_ref: !!python/object/apply:os.path.join [*srcdir, 'igblast-ref', *igb
 changeo_VT_ref: !!python/object/apply:os.path.join [*srcdir, 'igblast-ref', *igblast_VDJT_ref_prefix_part1, 'TRV.fasta']
 changeo_DT_ref: !!python/object/apply:os.path.join [*srcdir, 'igblast-ref', *igblast_VDJT_ref_prefix_part1, 'TRD.fasta']
 changeo_JT_ref: !!python/object/apply:os.path.join [*srcdir, 'igblast-ref', *igblast_VDJT_ref_prefix_part1, 'TRJ.fasta']
+
+# igblast auxiliary
+igblast_aux_file: &igblast_aux_file !!python/object/apply:pyutils.list_join [*species, "_gl.aux"]
+igblast_aux: !!python/object/apply:os.path.join [*srcdir, 'igblast-aux', *igblast_aux_file]

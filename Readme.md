@@ -49,13 +49,17 @@ rawdata/
 - `Nlim_HT: 10`。HT如果低于此数值，则标记该细胞为“low hashtag”
 - `Nratio_HT: 0.9`。主要HT占全部HT的最低比例，如果低于此数值，则该细胞标记为“mixed”
 - `Nratio_BD: 0.2`。某种BD占全部BD的比例，如果超过该数值，则在BD_type中添加此种BD
-- `Nratio_NC: 0.1`。NC占BD+NC的比例，如果高于此数值，则会被滤除
-
+- `Nratio_NC: 0.1`。NC占BD+NC的比例，如果高于此数值，则会被标记为“NC_load: TRUE”
 
 ## filter
 
 - `flt_mode`，过滤模式，形式是 `name: [lib1, lib2, ...]`。先将指定库的未过滤细胞取交集，然后应用所有库的过滤条件。如果mRNA库既有B细胞、也有T细胞，可以设置两个过滤模式分别处理
-
+- `mRNA_gene_flt: 10`：滤除mRNA库基因数低于此数值的细胞
+- `mRNA_umi_flt: 10`：滤除mRNA库umi数低于此数值的细胞
+- `mRNA_mt_percent_flt: 10`：滤除mRNA库线粒体基因umi数占比高于此数值（百分数）的细胞
+- `VDJB_umi_flt: 5`：滤除VDJT库umi数低于此数值的细胞
+- `VDJT_umi_flt: 5`：滤除VDJB库umi数低于此数值的细胞
+- `FB_umi_flt: 10`：滤除FB库BD umi数低于此数值的细胞
 
 # qc
 
