@@ -102,6 +102,7 @@ VDJB_parse_cpus: 2
 VDJT_parse_cpus: 2
 filter_cpus: 2
 visualize_cpus: 2
+visualize_rmd_cpus: 2
 
 
 ##############################

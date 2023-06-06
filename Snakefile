@@ -60,7 +60,8 @@ rule all:
         # filter
         filter_stat = expand(Pfilter + '/{sample}/filter_stat.yaml', sample=Lsample),
         # visualzie
-        visualize_touch = expand(Pvisualize + '/{sample}.txt', sample=Lsample)
+        visualize_touch = expand(Pvisualize + '/{sample}.txt', sample=Lsample),
+        visualize_html = expand(Pvisualize + '/{sample}.html', sample=Lsample)
 
 rule notebook_init:
     input: 
@@ -462,3 +463,16 @@ rule visualize:
     resources: cpus=config['visualize_cpus']
     conda: f'{pip_dir}/envs/visualize.yaml'
     notebook: rules.notebook_init.output.visualize_r
+
+rule visualize_rmd:
+    input:
+        filter_dir = rules.filter.output.filter_dir,
+        stat_dir = Pstat + '/{sample}'
+    output:
+        visualize_html = Pvisualize + '/{sample}.html'
+    log: e = Plog + '/visualize_rmd/{sample}.e', o = Plog + '/visualize_rmd/{sample}.o'
+    params: css_dir = f'{pip_dir}/src/visualize_css'
+    benchmark: Plog + '/visualize_rmd/{sample}.bmk'
+    resources: cpus=config['visualize_rmd_cpus']
+    conda: f'{pip_dir}/envs/visualize.yaml'
+    script: f'{pip_dir}/scripts/visualize.Rmd'
