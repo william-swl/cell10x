@@ -440,7 +440,8 @@ rule filter:
         filter_r = rules.notebook_init.output.filter_r
     output:
         filter_dir = directory(Pfilter + '/{sample}'),
-        filter_stat = Pfilter + '/{sample}/filter_stat.yaml'
+        filter_stat = Pfilter + '/{sample}/filter_stat.yaml',
+        stat_dir = Pstat + '/{sample}'
     params: stat_dir = Pstat + '/{sample}'
     log: notebook = Plog + '/filter/{sample}.r.ipynb', e = Plog + '/filter/{sample}.e', o = Plog + '/filter/{sample}.o'
     benchmark: Plog + '/filter/{sample}.bmk'
@@ -455,7 +456,7 @@ rule filter:
 rule visualize:
     input:
         filter_dir = rules.filter.output.filter_dir,
-        stat_dir = Pstat + '/{sample}'
+        stat_dir = rules.filter.output.stat_dir
     output:
         visualize_rds = Pvisualize + '/{sample}.rds'
     log: notebook = Plog + '/visualize/{sample}.r.ipynb', e = Plog + '/visualize/{sample}.e', o = Plog + '/visualize/{sample}.o'

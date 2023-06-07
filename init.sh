@@ -11,6 +11,9 @@ cp smk_profiles/cell10x.yaml ~/.config/snakemake/cell10x/config.yaml
 mkdir -p ~/.config/snakemake/cell10x_slurm
 cp smk_profiles/cell10x_slurm.yaml ~/.config/snakemake/cell10x_slurm/config.yaml
 
+# edit test.yaml
+sed -i "s|/home/william/pipeline/cell10x|$current_dir|g" sample_config/test.yaml
+
 ##################################
 ### input
 ##################################
