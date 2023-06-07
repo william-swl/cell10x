@@ -1,3 +1,49 @@
+/* colors */
+:root {
+    --highlight: rgb(21, 116, 143);
+    --grey: #f5f5f5;
+    --white: #fff;
+  }
+
 h1 {
-    color:rgb(17, 129, 160) !important;
+    color: var(--highlight);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    line-height: 2em;
+}
+
+
+/* table */
+table {
+    border-spacing: 0;
+    width: 100%;
+}
+tr {
+    text-align: center;
+}
+th {
+    padding: 10px;
+}
+table tbody .odd {
+    background-color: var(--grey);
+}
+table thead {
+    background-color: var(--highlight);
+    color: var(--white);
+}
+
+table th:first-child {
+border-radius: 5px 0 0 0;
+}
+table th:last-child {
+border-radius: 0 5px 0 0;
+}
+
+table tbody tr:last-child td:first-child {
+    border-radius: 0 0 0 5px;
+}
+
+table tbody tr:last-child td:last-child {
+    border-radius: 0 0 5px 0;
 }

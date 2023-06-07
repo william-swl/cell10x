@@ -5,8 +5,8 @@ indir: /home/william/pipeline/cell10x/test/rawdata
 outdir: /home/william/pipeline/cell10x/test/out
 srcdir: &srcdir /home/william/pipeline/cell10x/src
 Lsample:
-  # - test
-  - test2
+  - test
+  # - test2
 species: &species human
 metadata: /home/william/pipeline/cell10x/sample_config/metadata/test.csv
 
@@ -84,6 +84,10 @@ mRNA_mt_percent_flt: 10
 VDJB_umi_flt: 5
 VDJT_umi_flt: 5
 FB_umi_flt: 10
+
+# visualize
+show_celltypes_main: 5
+show_celltypes: 10
 
 ##############################
 ######## Resources

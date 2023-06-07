@@ -52,7 +52,7 @@ rule all:
         mRNA_csv = [PmRNA + f'/{sample}/mRNA.csv' for sample in Lsample if config[sample]['mRNA']],
         # parse VDJB
         VDJB_csv = [PVDJB + f'/{sample}/VDJB.csv' for sample in Lsample if config[sample]['VDJB']],
-        VDJB_tree = [PVDJB + f'/{sample}/changeo_clone-pass_germ-pass_igphyml-pass.tab' for sample in Lsample if config[sample]['VDJB']],
+        # VDJB_tree = [PVDJB + f'/{sample}/changeo_clone-pass_germ-pass_igphyml-pass.tab' for sample in Lsample if config[sample]['VDJB']],
         # parse VDJT
         VDJT_csv = [PVDJT + f'/{sample}/VDJT.csv' for sample in Lsample if config[sample]['VDJT']],
         # parse FB

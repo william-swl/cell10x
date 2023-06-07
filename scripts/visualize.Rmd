@@ -54,6 +54,14 @@ Lres[[1]][['filter']]
 ```
 
 ```{asis}
+# mRNA
+```
+
+```{r, echo=FALSE}
+Lres[[1]][['mRNA']]
+```
+
+```{asis}
 # hashtag
 ```
 
