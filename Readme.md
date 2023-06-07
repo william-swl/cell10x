@@ -9,11 +9,22 @@ mamba activate cell10x
 mamba install snakemake
 ```
 
-3. 安装pipeline所需依赖
+3. 访问[10x官方](https://support.10xgenomics.com/single-cell-gene-expression/software/downloads/7.1/)，获取 `Cellranger`的下载链接
 
-```shell
-make setup
+![img](doc/fig/cellranger_download.png)
+
+4. 运行脚本搭建运行环境
+
 ```
+bash init.sh
+```
+
+- 以上命令会：
+  - 将 `smk_profiles`内的匿名 `conda`路径更改为当前目录
+  - 在 `~./config/snakemake`下创建 `profile`，以供 `snakemake --profile`调用
+  - 安装`Cellranger`、所需参考数据集
+  - 运行 `snakemake --conda-create-envs-only`，创建所需的匿名 `conda`环境
+- 如果一切顺利，将不需要额外下载任何资源
 
 # 输入
 
@@ -200,14 +211,10 @@ VDJT与VDJB的区别：
 
 # # 可视化
 
-- `visualize`调用`jupyter notebook`绘制所需图形，并保存到`.rds`文件中
-- `visualize_rmd`使用`Rmarkdown`，将`.rds`文件中的图形绘制到`.html`文件中
-
-
+- `visualize`调用 `jupyter notebook`绘制所需图形，并保存到 `.rds`文件中
+- `visualize_rmd`使用 `Rmarkdown`，将 `.rds`文件中的图形绘制到 `.html`文件中
 
 [主题编辑器 - Apache ECharts](https://echarts.apache.org/zh/theme-builder.html)
-
-
 
 # 常见问题
 
