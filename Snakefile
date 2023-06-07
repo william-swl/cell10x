@@ -457,8 +457,9 @@ rule visualize:
         filter_dir = rules.filter.output.filter_dir,
         stat_dir = Pstat + '/{sample}'
     output:
-        visualize_touch = Pvisualize + '/{sample}.txt'
+        visualize_rds = Pvisualize + '/{sample}.rds'
     log: notebook = Plog + '/visualize/{sample}.r.ipynb', e = Plog + '/visualize/{sample}.e', o = Plog + '/visualize/{sample}.o'
+    params: echarts_theme = f'{pip_dir}/src/echarts_theme/mytheme.json'
     benchmark: Plog + '/visualize/{sample}.bmk'
     resources: cpus=config['visualize_cpus']
     conda: f'{pip_dir}/envs/visualize.yaml'
@@ -466,8 +467,7 @@ rule visualize:
 
 rule visualize_rmd:
     input:
-        filter_dir = rules.filter.output.filter_dir,
-        stat_dir = Pstat + '/{sample}'
+        visualize_rds = rules.visualize.output.visualize_rds
     output:
         visualize_html = Pvisualize + '/{sample}.html'
     log: e = Plog + '/visualize_rmd/{sample}.e', o = Plog + '/visualize_rmd/{sample}.o'

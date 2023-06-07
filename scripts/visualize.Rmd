@@ -8,25 +8,15 @@ output:
 
 ```{r include=FALSE}
 knitr::opts_chunk$set(prompt=TRUE, comment='', collapse=TRUE, message=FALSE, warning=FALSE)
-baizer::pkglib(baizer, tidyverse, ggsci, ggbeeswarm, plutor, ComplexHeatmap, plotly, ggplotify, echarts4r, knitr)
+baizer::pkglib(baizer, tidyverse, ggsci, ggbeeswarm, plutor, ComplexHeatmap, plotly, ggplotify, echarts4r, jsonlite, knitr)
 
 sample <- snakemake@wildcards[['sample']]
 
 # replace default configs with sample configs
 config <- replace_item(snakemake@config, snakemake@config[[sample]])
-Lflt_mode <- names(config[['flt_mode']])
 
-filter_dir <- snakemake@input[['filter_dir']]
-stat_dir <- snakemake@input[['stat_dir']]
-
-flt_mode <- Lflt_mode[1]
-
-TBkeep <- read_csv(str_glue('{filter_dir}/{flt_mode}_keep.csv'))
-TBflt <- read_csv(str_glue('{filter_dir}/{flt_mode}_flt.csv'))
-
-Vcol <- c('#E64B35FF', '#4DBBD5FF', '#00A087FF', '#3C5488FF', '#F39B7FFF', '#8491B4FF', '#91D1C2FF', '#DC0000FF', '#7E6148FF', '#B09C85FF', '#1F77B4FF', '#FF7F0EFF', '#2CA02CFF', '#D62728FF', '#9467BDFF', '#8C564BFF', '#E377C2FF', '#7F7F7FFF', '#BCBD22FF', '#17BECFFF', '#AEC7E8FF', '#FFBB78FF', '#98DF8AFF', '#FF9896FF', '#C5B0D5FF', '#C49C94FF', '#F7B6D2FF', '#C7C7C7FF', '#DBDB8DFF', '#9EDAE5FF')
-grey_col <- '#f5f5f5'
-
+# all results
+Lres <- readRDS(snakemake@input[['visualize_rds']])
 
 # css
 css_dir <- snakemake@params[['css_dir']]
@@ -41,41 +31,34 @@ css_content <- str_c(css_dir, dir(css_dir), sep='/') %>%
 
 
 ```{asis}
-# Filter
+# filter
 ```
 
-
-
-```{r, echo=TRUE, fig.show="hold", out.width="50%"}
-TBkeep <- TBkeep %>% c2r('cell') %>% seriate_df %>% r2c('cell')
-TBkeep_longer <- TBkeep %>% pivot_longer(-cell, names_to='term', values_to='value')
-
-e1 <- TBkeep_longer %>% 
-  mutate(term=str_replace(term, '_keep$', '')) %>%
-  e_charts(term) %>% 
-  e_heatmap(cell, value) %>%
-  e_visual_map(value) %>%
-  e_title("Filter") %>%
-  e_x_axis(axisLabel=list(interval=0, rotate=45)) %>%
-  e_y_axis(show=FALSE)
-  
-  
-e2 <- as_tibble(TBkeep %>% select(-cell) %>% apply(2, sum), rownames='term') %>%
-  mutate(term=str_replace(term, '_keep$', '')) %>%
-  e_charts(term) %>%
-  e_bar(value) %>%
-  e_x_axis(axisLabel=list(interval=0, rotate=45)) %>%
-  e_title("Filter") 
-  
-e_arrange(e1, e2, e2, e2, cols=3, rows=2)
-
-
-
+```{r, echo=FALSE}
+Lres[[1]][['filter']]
 ```
 
+```{asis}
+# hashtag
+```
 
+```{r, echo=FALSE}
+Lres[[1]][['HT']]
+```
 
-```{r, echo=FALSE, fig.show="hold", out.width="50%"}
-mini_diamond %>% ggplot(aes(x=x, y=y)) + geom_point()
-mini_diamond %>% ggplot(aes(x=x, y=y)) + geom_point()
+```{asis}
+# binding feature barcode
+```
+
+```{r, echo=FALSE}
+Lres[[1]][['BD']]
+```
+
+```{asis}
+# Bcell VDJ
+```
+
+```{r, echo=FALSE}
+Lres[[1]][['VDJB']][['table']]
+Lres[[1]][['VDJB']][['plot']]
 ```
