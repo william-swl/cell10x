@@ -200,6 +200,11 @@ VDJT与VDJB的区别：
 
 # # 可视化
 
+- `visualize`调用`jupyter notebook`绘制所需图形，并保存到`.rds`文件中
+- `visualize_rmd`使用`Rmarkdown`，将`.rds`文件中的图形绘制到`.html`文件中
+
+
+
 [主题编辑器 - Apache ECharts](https://echarts.apache.org/zh/theme-builder.html)
 
 

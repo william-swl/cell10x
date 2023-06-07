@@ -459,7 +459,9 @@ rule visualize:
     output:
         visualize_rds = Pvisualize + '/{sample}.rds'
     log: notebook = Plog + '/visualize/{sample}.r.ipynb', e = Plog + '/visualize/{sample}.e', o = Plog + '/visualize/{sample}.o'
-    params: echarts_theme = f'{pip_dir}/src/echarts_theme/mytheme.json'
+    params: 
+        echarts_theme = f'{pip_dir}/src/echarts_theme/mytheme.json',
+        metadata = config['metadata']
     benchmark: Plog + '/visualize/{sample}.bmk'
     resources: cpus=config['visualize_cpus']
     conda: f'{pip_dir}/envs/visualize.yaml'

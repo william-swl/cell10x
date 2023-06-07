@@ -8,6 +8,7 @@ Lsample:
   # - test
   - test2
 species: &species human
+metadata: /home/william/pipeline/cell10x/sample_config/metadata/test.csv
 
 
 

@@ -28,6 +28,21 @@ css_content <- str_c(css_dir, dir(css_dir), sep='/') %>%
 ```{css, code=css_content, echo=FALSE}
 ```
 
+```{asis}
+# metadata
+```
+
+```{r, echo=FALSE}
+Lres[['metadata']]
+```
+
+```{asis}
+# cells
+```
+
+```{r, echo=FALSE}
+Lres[['cells']]
+```
 
 
 ```{asis}
