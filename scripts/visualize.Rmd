@@ -7,8 +7,9 @@ output:
 
 
 ```{r include=FALSE}
-knitr::opts_chunk$set(prompt=TRUE, comment='', collapse=TRUE, message=FALSE, warning=FALSE)
-baizer::pkglib(baizer, tidyverse, ggsci, ggbeeswarm, plutor, ComplexHeatmap, plotly, ggplotify, echarts4r, jsonlite, knitr)
+knitr::opts_chunk$set(prompt=TRUE, comment='', echo=FALSE, collapse=TRUE, message=FALSE, warning=FALSE)
+baizer::pkglib(baizer, tidyverse, ggsci, ggbeeswarm, plutor, ComplexHeatmap, 
+  plotly, ggplotify, echarts4r, jsonlite, knitr, htmltools)
 
 sample <- snakemake@wildcards[['sample']]
 
@@ -28,60 +29,69 @@ css_content <- str_c(css_dir, dir(css_dir), sep='/') %>%
 ```{css, code=css_content, echo=FALSE}
 ```
 
-```{asis}
+
+```{r}
 # metadata
-```
+p <- Lres[['metadata']]
+if (!is.null(p)) {
+  h1('metadata')
+  p
+}
 
-```{r, echo=FALSE}
-Lres[['metadata']]
-```
-
-```{asis}
-# cells
-```
-
-```{r, echo=FALSE}
+h1('cells')
 Lres[['cells']]
-```
 
-
-```{asis}
-# filter
-```
-
-```{r, echo=FALSE}
+h1('filter')
 Lres[[1]][['filter']]
 ```
 
-```{asis}
+```{r}
+Vflt_mode <- intersect(names(config[['flt_mode']]), names(Lres))
+
+flt_mode <- Vflt_mode[1]
+
+h1(str_c('filter mode: ', flt_mode))
+
 # mRNA
-```
+p <- Lres[[flt_mode]][['mRNA']]
+if (!is.null(p)) {
+    h2('mRNA')
+}
+if (!is.null(p)) {
+    p
+}
 
-```{r, echo=FALSE}
-Lres[[1]][['mRNA']]
-```
+# BD
 
-```{asis}
-# hashtag
-```
+p <- Lres[[flt_mode]][['HT']]
+if (!is.null(p)) {
+  h2('hashtag')
+}
+if (!is.null(p)) {
+  p
+}
 
-```{r, echo=FALSE}
-Lres[[1]][['HT']]
-```
 
-```{asis}
-# binding feature barcode
-```
+p <- Lres[[flt_mode]][['BD']]
+if (!is.null(p)) {
+  h2('binding feature barcode')
+}
+if (!is.null(p)) {
+  p
+}
 
-```{r, echo=FALSE}
-Lres[[1]][['BD']]
-```
 
-```{asis}
-# Bcell VDJ
-```
+# VDJB
+p1 <- Lres[[flt_mode]][['VDJB']][['table']]
+p2 <- Lres[[flt_mode]][['VDJB']][['plot']]
+if (!is.null(c(p1, p2))) {
+  h2('Bcell VDJ')
+}
+if (!is.null(c(p1, p2))) {
+  p1
+}
+if (!is.null(c(p1, p2))) {
+  p2
+}
 
-```{r, echo=FALSE}
-Lres[[1]][['VDJB']][['table']]
-Lres[[1]][['VDJB']][['plot']]
 ```
