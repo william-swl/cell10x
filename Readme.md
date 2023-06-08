@@ -22,8 +22,9 @@ bash init.sh
 - 以上命令会：
   - 将 `smk_profiles`内的匿名 `conda`路径更改为当前目录
   - 在 `~./config/snakemake`下创建 `profile`，以供 `snakemake --profile`调用
-  - 将`sample_config/test.yaml`内的测试数据集路径更改为当前目录
-  - 安装`Cellranger`、所需参考数据集
+  - 将 `sample_config/test.yaml`内的测试数据集路径更改为当前目录
+  - 安装 `Cellranger`、所需参考数据集
+  - 设置`conda`的channel优先选择`conda-forge`，以[尽量避免兼容性问题](https://conda-forge.org/docs/user/tipsandtricks.html)
   - 运行 `snakemake --conda-create-envs-only`，创建所需的匿名 `conda`环境
 - 如果一切顺利，将不需要额外下载任何资源
 

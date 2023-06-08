@@ -199,4 +199,5 @@ fi
 ##################################
 ### build envs
 ##################################
+conda config --set channel_priority strict
 snakemake --profile cell10x --conda-create-envs-only -j1

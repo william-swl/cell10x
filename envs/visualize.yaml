@@ -23,6 +23,7 @@ dependencies:
   - r-ggh4x
   - r-echarts4r
   - r-ggplotify
+  - r-data.tree
   - notebook
   - r-irkernel
   # for baizer
