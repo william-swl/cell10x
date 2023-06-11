@@ -304,8 +304,9 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             DefineClones.py -d {output.VDJB_changeo_db} --failed --act set --nproc {resources.cpus}\\
                 --outname changeo --model ham --norm len --dist 0.15 1>>{log.o} 2>>{log.e}
 
-            # in case all contigs are failed
+            # in case all contigs are failed or all passed
             touch {output.VDJB_changeo}
+            touch {output.VDJB_changeo_fail}
             """
 
     rule VDJB_tree:
