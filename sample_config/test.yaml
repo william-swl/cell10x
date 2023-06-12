@@ -5,8 +5,8 @@ indir: /home/william/pipeline/cell10x/test/rawdata
 outdir: /home/william/pipeline/cell10x/test/out
 srcdir: &srcdir /home/william/pipeline/cell10x/src
 Lsample:
-  - test
-  # - test2
+  # - test
+  - test2
 species: &species human
 metadata: /home/william/pipeline/cell10x/sample_config/metadata/test.csv
 

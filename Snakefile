@@ -357,16 +357,17 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             R -e " \
                 x <- readr::read_tsv('{input.VDJB_count_dir}/airr_rearrangement.tsv'); \
                 genogamesh::parse_CellRanger_vdjseq(x, file='{output.VDJB_orf_aa_fa}', fa_content='seq_orf_aa'); \
-                y <- dplyr::pull(readr::read_tsv('{input.VDJB_igblast_tsv}'), germline_alignment_aa, sequence_id); \
+                pre_y <- dplyr::pull(readr::read_tsv('{input.VDJB_igblast_tsv}'), germline_alignment_aa, sequence_id); \
+                y <- stringr::str_replace_all(pre_y, '-', ''); names(y) <- names(pre_y); \
                 genogamesh::write_fasta(y, '{output.VDJB_gm_aa_fa}'); \
                 " 1>>{log.o} 2>>{log.e}
-
 
             cd {params.outdir}
             # for mutation target profile 
             ANARCI -i {output.VDJB_orf_aa_fa} -o orf_anarci -ht orf_anarci_hittable.txt \\
                 --use_species {species} --restrict ig -s imgt --csv --ncpu {resources.cpus} \\
                 --assign_germline 1>>{log.o} 2>>{log.e}
+
             ANARCI -i {output.VDJB_gm_aa_fa} -o gm_anarci -ht gm_anarci_hittable.txt \\
                 --use_species {species} --restrict ig -s imgt --csv --ncpu {resources.cpus} \\
                 --assign_germline 1>>{log.o} 2>>{log.e}
@@ -394,7 +395,6 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             VDJB_parse_r = rules.notebook_init.output.VDJB_parse_r
         output:
             VDJB_csv = PVDJB + '/{sample}/VDJB.csv',
-            VDJB_mut = PVDJB + '/{sample}/VDJB_mut.csv',
             VDJB_stat = PVDJB + '/{sample}/VDJB_stat.yaml',
             stat_dir = directory(Pstat + '/{sample}/VDJB')
         log: notebook = Plog + '/VDJB_parse/{sample}.r.ipynb', e = Plog + '/VDJB_parse/{sample}.e', o = Plog + '/VDJB_parse/{sample}.o'
