@@ -325,7 +325,7 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             changeo_JB_ref = config['changeo_JB_ref'],
             outdir = PVDJB + '/{sample}'
         shell:"""
-            CreateGermlines.py -d {input.VDJB_changeo} -g dmask \\
+            CreateGermlines.py -d {input.VDJB_changeo} -g dmask --cloned \\
                 -r {params.changeo_VB_ref} {params.changeo_DB_ref} {params.changeo_JB_ref} \\
                 1>>{log.o} 2>>{log.e}
 
