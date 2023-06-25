@@ -498,8 +498,6 @@ rule visualize_rmd:
 if lambda wildcards:config[wildcards.sample]['VDJB']:
     rule Bcell_tree:
         input:
-            Bcell_changeo_flt_H = rules.filter.params.Bcell_changeo_flt_H,
-            Bcell_changeo_flt_L = rules.filter.params.Bcell_changeo_flt_L,
             filter_dir = rules.filter.output.filter_dir
         output:
             Bcell_tree_H = Ptree + '/{sample}/Bcell_tree_H_igphyml-pass.tab',
@@ -509,14 +507,16 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
         resources: cpus=config['Bcell_tree_cpus']
         conda: f'{pip_dir}/envs/VDJ.yaml'
         params: 
+            Bcell_changeo_flt_H = rules.filter.params.Bcell_changeo_flt_H,
+            Bcell_changeo_flt_L = rules.filter.params.Bcell_changeo_flt_L,
             outdir = Ptree + '/{sample}',
             tree_sample = config['tree_sample']
         shell:"""
-            BuildTrees.py -d {input.Bcell_changeo_flt_H} --collapse \\
+            BuildTrees.py -d {params.Bcell_changeo_flt_H} --collapse \\
                 --sample {params.tree_sample} --igphyml --clean all --nproc {resources.cpus} \\
                 --outdir {params.outdir} --outname Bcell_tree_H \\
                 1>>{log.o} 2>>{log.e}
-            BuildTrees.py -d {input.Bcell_changeo_flt_L} --collapse \\
+            BuildTrees.py -d {params.Bcell_changeo_flt_L} --collapse \\
                 --sample {params.tree_sample} --igphyml --clean all --nproc {resources.cpus} \\
                 --outdir {params.outdir} --outname Bcell_tree_L \\
                 1>>{log.o} 2>>{log.e}
