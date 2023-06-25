@@ -284,8 +284,9 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             VDJB_igblast_txt = rules.VDJB_igblast.output.VDJB_igblast_txt
         output: 
             VDJB_changeo_db = PVDJB + '/{sample}/changeo_db-pass.tsv',
-            VDJB_changeo = PVDJB + '/{sample}/changeo_clone-pass.tsv',
+            VDJB_changeo_clone = PVDJB + '/{sample}/changeo_clone-pass.tsv',
             VDJB_changeo_fail = PVDJB + '/{sample}/changeo_clone-fail.tsv',
+            VDJB_changeo  = PVDJB + '/{sample}/changeo_clone-pass_germ-pass.tsv',
         log: e = Plog + '/VDJB_changeo/{sample}.e', o = Plog + '/VDJB_changeo/{sample}.o'
         benchmark: Plog + '/VDJB_changeo/{sample}.bmk'
         resources: cpus=config['VDJB_changeo_cpus']
@@ -305,31 +306,27 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
                 --outname changeo --model ham --norm len --dist 0.15 1>>{log.o} 2>>{log.e}
 
             # in case all contigs are failed or all passed
-            touch {output.VDJB_changeo}
+            touch {output.VDJB_changeo_clone}
             touch {output.VDJB_changeo_fail}
+
+            CreateGermlines.py -d {output.VDJB_changeo_clone} -g dmask --cloned \\
+                -r {params.changeo_VB_ref} {params.changeo_DB_ref} {params.changeo_JB_ref} \\
+                1>>{log.o} 2>>{log.e}
             """
 
     rule VDJB_tree:
         input:
             VDJB_changeo = rules.VDJB_changeo.output.VDJB_changeo,
         output:
-            VDJB_changeo_gm  = PVDJB + '/{sample}/changeo_clone-pass_germ-pass.tsv',
             VDJB_tree = PVDJB + '/{sample}/changeo_clone-pass_germ-pass_igphyml-pass.tab',
         log: e = Plog + '/VDJB_tree/{sample}.e', o = Plog + '/VDJB_tree/{sample}.o'
         benchmark: Plog + '/VDJB_tree/{sample}.bmk'
         resources: cpus=config['VDJB_tree_cpus']
         conda: f'{pip_dir}/envs/VDJ.yaml'
         params: 
-            changeo_VB_ref = config['changeo_VB_ref'],
-            changeo_DB_ref = config['changeo_DB_ref'],
-            changeo_JB_ref = config['changeo_JB_ref'],
             outdir = PVDJB + '/{sample}'
         shell:"""
-            CreateGermlines.py -d {input.VDJB_changeo} -g dmask --cloned \\
-                -r {params.changeo_VB_ref} {params.changeo_DB_ref} {params.changeo_JB_ref} \\
-                1>>{log.o} 2>>{log.e}
-
-            BuildTrees.py -d {output.VDJB_changeo_gm} --collapse \\
+            BuildTrees.py -d {input.VDJB_changeo} --collapse \\
                 --sample 3000 --igphyml --clean all --nproc {resources.cpus} \\
                 1>>{log.o} 2>>{log.e}
         """
@@ -376,7 +373,7 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             ANARCI -i {output.VDJB_orf_aa_fa} -o ext_anarci -ht ext_anarci_hittable.txt \\
                 --use_species {species} --restrict ig -s {params.ext_numbering} --csv --ncpu {resources.cpus} \\
                 --assign_germline 1>>{log.o} 2>>{log.e}
-            """
+        """
 
 
     rule VDJB_parse:
@@ -475,7 +472,6 @@ rule filter:
 ##################################
 ### visualize
 ##################################
-
 rule visualize:
     input:
         filter_dir = rules.filter.output.filter_dir

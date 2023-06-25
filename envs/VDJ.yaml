@@ -1,3 +1,4 @@
+name: VDJ
 channels:
   - conda-forge
   - bioconda
@@ -16,6 +17,7 @@ dependencies:
   - anarci
   - igphyml
   - r-alakazam
+  - r-shazam
   # for baizer
   - r-openxlsx=4.2.5.2
   - r-curl

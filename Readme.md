@@ -24,7 +24,7 @@ bash init.sh
   - 在 `~./config/snakemake`下创建 `profile`，以供 `snakemake --profile`调用
   - 将 `sample_config/test.yaml`内的测试数据集路径更改为当前目录
   - 安装 `Cellranger`、所需参考数据集
-  - 设置`conda`的channel优先选择`conda-forge`，以[尽量避免兼容性问题](https://conda-forge.org/docs/user/tipsandtricks.html)
+  - 设置 `conda`的channel优先选择 `conda-forge`，以[尽量避免兼容性问题](https://conda-forge.org/docs/user/tipsandtricks.html)
   - 运行 `snakemake --conda-create-envs-only`，创建所需的匿名 `conda`环境
 - 如果一切顺利，将不需要额外下载任何资源
 
@@ -207,14 +207,23 @@ VDJT与VDJB的区别：
 | 错配数           |                            |                        |                         | √                             |                        |              |
 | gap数            |                            |                        |                         | √                             |                        |              |
 
+## tree and graph
+
+- 根据`ChangeO`掩蔽d基因后的结果，创建克隆树。每个`ChangeO`克隆将会构建为一棵树，仅包括重链或仅包括轻链
+- 根据`igblast`结果中的`sequence_alignment`和`germline_alignment`（被重命名为`seq_align_nt_H`，`gm_align_nt_H`），先用`shazam::collapseClones`生成克隆内公共序列，然后计算不同克隆之间的字符编辑距离
+- 使用`MDS`降维，散点图绘制二维关系
+
+
+
 # filter
 
 - 用于filter的列先进行初始化，如果值为NA修改为合适的值，使得未通过filter、没有测该库能够区分
 
-# # 可视化
+## 可视化
 
 - `visualize`调用 `jupyter notebook`绘制所需图形，并保存到 `.rds`文件中
 - `visualize_rmd`使用 `Rmarkdown`，将 `.rds`文件中的图形绘制到 `.html`文件中
+
 
 [主题编辑器 - Apache ECharts](https://echarts.apache.org/zh/theme-builder.html)
 

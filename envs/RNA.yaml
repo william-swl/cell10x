@@ -1,3 +1,4 @@
+name: RNA
 channels:
   - conda-forge
   - bioconda

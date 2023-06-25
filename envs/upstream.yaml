@@ -1,3 +1,4 @@
+name: upstream
 channels:
   - conda-forge
   - bioconda
