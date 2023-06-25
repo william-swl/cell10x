@@ -25,6 +25,7 @@ dependencies:
   - r-echarts4r
   - r-ggplotify
   - r-data.tree
+  - r-shazam
   - r-igraph
   - r-stringdist
   - bioconductor-ggtree

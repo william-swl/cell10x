@@ -23,6 +23,7 @@ PVDJB=f'{outdir}/3parse/VDJB'
 PVDJT=f'{outdir}/3parse/VDJT'
 Pfilter=f'{outdir}/4filter'
 Pvisualize=f'{outdir}/5visualize'
+Ptree=f'{outdir}/6tree'
 
 
 
@@ -52,7 +53,6 @@ rule all:
         mRNA_csv = [PmRNA + f'/{sample}/mRNA.csv' for sample in Lsample if config[sample]['mRNA']],
         # parse VDJB
         VDJB_csv = [PVDJB + f'/{sample}/VDJB.csv' for sample in Lsample if config[sample]['VDJB']],
-        # VDJB_tree = [PVDJB + f'/{sample}/changeo_clone-pass_germ-pass_igphyml-pass.tab' for sample in Lsample if config[sample]['VDJB']],
         # parse VDJT
         VDJT_csv = [PVDJT + f'/{sample}/VDJT.csv' for sample in Lsample if config[sample]['VDJT']],
         # parse FB
@@ -60,7 +60,13 @@ rule all:
         # filter
         filter_stat = expand(Pfilter + '/{sample}/filter_stat.yaml', sample=Lsample),
         # visualzie
-        visualize_html = expand(Pvisualize + '/{sample}.html', sample=Lsample)
+        visualize_html = expand(Pvisualize + '/{sample}.html', sample=Lsample),
+        # B cell tree
+        Bcell_tree_H = [Ptree + f'/{sample}/Bcell_tree_H_igphyml-pass.tab' for sample in Lsample if config[sample]['VDJB']],
+
+
+wildcard_constraints:
+    sample='[^/]+'
 
 rule notebook_init:
     input: 
@@ -314,23 +320,6 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
                 1>>{log.o} 2>>{log.e}
             """
 
-    rule VDJB_tree:
-        input:
-            VDJB_changeo = rules.VDJB_changeo.output.VDJB_changeo,
-        output:
-            VDJB_tree = PVDJB + '/{sample}/changeo_clone-pass_germ-pass_igphyml-pass.tab',
-        log: e = Plog + '/VDJB_tree/{sample}.e', o = Plog + '/VDJB_tree/{sample}.o'
-        benchmark: Plog + '/VDJB_tree/{sample}.bmk'
-        resources: cpus=config['VDJB_tree_cpus']
-        conda: f'{pip_dir}/envs/VDJ.yaml'
-        params: 
-            outdir = PVDJB + '/{sample}'
-        shell:"""
-            BuildTrees.py -d {input.VDJB_changeo} --collapse \\
-                --sample 3000 --igphyml --clean all --nproc {resources.cpus} \\
-                1>>{log.o} 2>>{log.e}
-        """
-
     rule VDJB_anarci:
         input: 
             VDJB_count_dir = rules.VDJB_count.output.VDJB_count_dir,
@@ -456,13 +445,16 @@ def get_filter_input(wildcards):
     return dirs
 
 rule filter:
-    input:
+    input: 
         filter_input = get_filter_input,
         filter_r = rules.notebook_init.output.filter_r
     output:
         filter_dir = directory(Pfilter + '/{sample}'),
         filter_stat = Pfilter + '/{sample}/filter_stat.yaml'
-    params: stat_dir = Pstat + '/{sample}'
+    params: 
+        stat_dir = Pstat + '/{sample}',
+        Bcell_changeo_flt_H = Pfilter + '/{sample}/Bcell_changeo_flt_H.tsv',
+        Bcell_changeo_flt_L = Pfilter + '/{sample}/Bcell_changeo_flt_L.tsv'
     log: notebook = Plog + '/filter/{sample}.r.ipynb', e = Plog + '/filter/{sample}.e', o = Plog + '/filter/{sample}.o'
     benchmark: Plog + '/filter/{sample}.bmk'
     resources: cpus=config['filter_cpus']
@@ -498,3 +490,34 @@ rule visualize_rmd:
     resources: cpus=config['visualize_rmd_cpus']
     conda: f'{pip_dir}/envs/visualize.yaml'
     script: f'{pip_dir}/scripts/visualize.Rmd'
+
+
+##################################
+### Bcell tree
+##################################
+if lambda wildcards:config[wildcards.sample]['VDJB']:
+    rule Bcell_tree:
+        input:
+            Bcell_changeo_flt_H = rules.filter.params.Bcell_changeo_flt_H,
+            Bcell_changeo_flt_L = rules.filter.params.Bcell_changeo_flt_L,
+            filter_dir = rules.filter.output.filter_dir
+        output:
+            Bcell_tree_H = Ptree + '/{sample}/Bcell_tree_H_igphyml-pass.tab',
+            Bcell_tree_L = Ptree + '/{sample}/Bcell_tree_L_igphyml-pass.tab',
+        log: e = Plog + '/Bcell_tree/{sample}.e', o = Plog + '/Bcell_tree/{sample}.o'
+        benchmark: Plog + '/Bcell_tree/{sample}.bmk'
+        resources: cpus=config['Bcell_tree_cpus']
+        conda: f'{pip_dir}/envs/VDJ.yaml'
+        params: 
+            outdir = Ptree + '/{sample}',
+            tree_sample = config['tree_sample']
+        shell:"""
+            BuildTrees.py -d {input.Bcell_changeo_flt_H} --collapse \\
+                --sample {params.tree_sample} --igphyml --clean all --nproc {resources.cpus} \\
+                --outdir {params.outdir} --outname Bcell_tree_H \\
+                1>>{log.o} 2>>{log.e}
+            BuildTrees.py -d {input.Bcell_changeo_flt_L} --collapse \\
+                --sample {params.tree_sample} --igphyml --clean all --nproc {resources.cpus} \\
+                --outdir {params.outdir} --outname Bcell_tree_L \\
+                1>>{log.o} 2>>{log.e}
+        """

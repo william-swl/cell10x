@@ -5,8 +5,8 @@ indir: /home/william/pipeline/cell10x/test/rawdata
 outdir: /home/william/pipeline/cell10x/test/out
 srcdir: &srcdir /home/william/pipeline/cell10x/src
 Lsample:
-  - test
-  # - test2
+  # - test
+  - test2
 species: &species human
 metadata: /home/william/pipeline/cell10x/sample_config/metadata/test.csv
 
@@ -89,6 +89,9 @@ FB_umi_flt: 10
 show_celltypes_main: 5
 show_celltypes: 10
 
+# tree
+tree_sample: 100
+
 ##############################
 ######## Resources
 ##############################
@@ -101,7 +104,7 @@ mRNA_parse_cpus: 2
 FB_parse_cpus: 2
 VDJB_igblast_cpus: 2
 VDJB_changeo_cpus: 2
-VDJB_tree_cpus: 4
+Bcell_tree_cpus: 4
 VDJB_anarci_cpus: 2
 VDJB_parse_cpus: 2
 VDJT_parse_cpus: 2
