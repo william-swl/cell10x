@@ -1,4 +1,4 @@
-import os,time,shutil,json
+import os,time,shutil,pycones
 pip_dir = os.getcwd()
 configfile: f'{pip_dir}/sample_config/test.yaml'
 
@@ -87,15 +87,10 @@ rule notebook_init:
     log: e = Plog + '/notebook_init.e', o = Plog + '/notebook_init.o'
     run:
         for k, f in input.items():
-            notebook = json.loads(open(f, 'r').read())
             if f.endswith('.r.ipynb'):
-                notebook['metadata']['kernelspec']['name'] = 'ir'
-                notebook['metadata']['kernelspec']['display_name'] = 'R'
+                pycones.nb_kernel_switch(f, output[k], kernel='r')
             elif f.endswith('.py.ipynb'):
-                notebook['metadata']['kernelspec']['name'] = 'python3'
-                notebook['metadata']['kernelspec']['display_name'] = 'Python 3 (ipykernel)'
-            with open(output[k], 'w') as out:
-                json.dump(notebook, out)
+                pycones.nb_kernel_switch(f, output[k], kernel='python')
 
 
 rule qc:
