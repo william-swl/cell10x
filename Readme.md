@@ -7,6 +7,7 @@
 mamba create -n cell10x
 mamba activate cell10x
 mamba install snakemake
+pip install pycones
 ```
 
 3. 访问[10x官方](https://support.10xgenomics.com/single-cell-gene-expression/software/downloads/7.1/)，获取 `Cellranger`的下载链接
@@ -56,9 +57,11 @@ rawdata/
 
 ## Feature barcode
 
-- `HT：Hashtag`，用于区分细胞身份的标签，例如不同的实验组、不同的样本来源。理想情况下，每个细胞都有且仅有一种HT
-- `NC：Negative control`，阴性对照，例如OVA。理想情况下，细胞上不应该有NC
-- `BD：Binding`，抗原结合
+- `id2seq`，列出FB名和序列的对应关系
+  - `HT：Hashtag`，用于区分细胞身份的标签，例如不同的实验组、不同的样本来源。理想情况下，每个细胞都有且仅有一种HT
+  - `NC：Negative control`，阴性对照，例如OVA。理想情况下，细胞上不应该有NC
+  - `BD：Binding`，抗原结合
+- `FB_corr`，FB矫正系数。根据`id2seq`下FB的名称`fb`通过正则表达式`fb$`寻找相应的列，然后将这些列的FB umi数值乘矫正系数
 - `Nlim_HT: 10`。HT如果低于此数值，则标记该细胞为“low hashtag”
 - `Nratio_HT: 0.9`。主要HT占全部HT的最低比例，如果低于此数值，则该细胞标记为“mixed”
 - `Nratio_BD: 0.2`。某种BD占全部BD的比例，如果超过该数值，则在BD_type中添加此种BD
@@ -218,12 +221,16 @@ VDJT与VDJB的区别：
 # filter
 
 - 用于filter的列先进行初始化，如果值为NA修改为合适的值，使得未通过filter、没有测该库能够区分
+- 按照设置的`flt_mode`进行过滤，每种模式都有输出结果
+- 对于`Bcell`模式，除了输出过滤后的表格外，也同changeo的输出取一个子集，方便之后B细胞建树
+- 将`metadata.csv`中以`#`开头的列添加到输出的表格中
 
 ## 可视化
 
 - `visualize`调用 `jupyter notebook`绘制所需图形，并保存到 `.rds`文件中
 - `visualize_rmd`使用 `Rmarkdown`，将 `.rds`文件中的图形绘制到 `.html`文件中
-
+- 将`metadata.csv`中不以`#`开头的列，输出到metadata部分
+- 存在通过filter，但`clone_changeo_H`未被分配的情况，可视化clone之前滤除了这种情况
 
 [主题编辑器 - Apache ECharts](https://echarts.apache.org/zh/theme-builder.html)
 
