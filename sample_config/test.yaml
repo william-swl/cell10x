@@ -73,11 +73,11 @@ flt_mode:
   Bcell:
     - mRNA
     - FB
-    - VDJB
+    - VDJB*
   Tcell:
     - mRNA
     - FB
-    - VDJT
+    - VDJT*
 mRNA_gene_flt: 10
 mRNA_umi_flt: 10
 mRNA_mt_percent_flt: 10
