@@ -219,12 +219,19 @@ VDJT与VDJB的区别：
 
 
 
-# filter
+## filter
 
 - 用于filter的列先进行初始化，如果值为NA修改为合适的值，使得未通过filter、没有测该库能够区分
 - 按照设置的`flt_mode`进行过滤，每种模式都有输出结果
 - 对于`Bcell`模式，除了输出过滤后的表格外，也同changeo的输出取一个子集，方便之后B细胞建树
 - 将`metadata.csv`中以`#`开头的列添加到输出的表格中
+
+## 统计
+- 对于每个样本，先在每个库水平单独进行统计，输出到`0stat/sample/lib/lib_stat.yaml`中
+- 然后将所有库的结果合并到`0stat/sample/stats.csv`
+- 对于在同一个`yaml`配置文件中指定的多个样本，视为一个batch，可指定`run_batch_stat: True`开启batch统计
+
+
 
 ## 可视化
 

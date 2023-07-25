@@ -5,10 +5,12 @@ indir: /home/william/pipeline/cell10x/test/rawdata
 outdir: /home/william/pipeline/cell10x/test/out
 srcdir: &srcdir /home/william/pipeline/cell10x/src
 Lsample:
-  # - test
+  - test
   - test2
 species: &species human
 metadata: /home/william/pipeline/cell10x/sample_config/metadata/test.csv
+run_tree: False
+run_batch_stat: True
 
 
 
@@ -109,6 +111,7 @@ VDJB_anarci_cpus: 2
 VDJB_parse_cpus: 2
 VDJT_parse_cpus: 2
 filter_cpus: 2
+concat_stat_cpus: 2
 visualize_cpus: 2
 visualize_rmd_cpus: 2
 

@@ -1,4 +1,5 @@
 import os,time,shutil,pycones
+import pandas as pd
 pip_dir = os.getcwd()
 configfile: f'{pip_dir}/sample_config/test.yaml'
 
@@ -59,10 +60,14 @@ rule all:
         FB_csv = [PFB + f'/{sample}/FB.csv' for sample in Lsample if config[sample]['FB']],
         # filter
         filter_stat = expand(Pfilter + '/{sample}/filter_stat.yaml', sample=Lsample),
+        # concat stat
+        stats = expand(Pstat + '/{sample}/stats.csv', sample=Lsample),
+        # batch stat
+        batch_stat = Pstat + '/batch_stat.csv' if config['run_batch_stat'] else [],
         # visualzie
         visualize_html = expand(Pvisualize + '/{sample}.html', sample=Lsample),
         # B cell tree
-        Bcell_tree_H = [Ptree + f'/{sample}/Bcell_tree_H_igphyml-pass.tab' for sample in Lsample if config[sample]['VDJB']],
+        Bcell_tree_H = [Ptree + f'/{sample}/Bcell_tree_H_igphyml-pass.tab' for sample in Lsample if (config[sample]['VDJB'] and config['run_tree'])]
 
 
 wildcard_constraints:
@@ -75,6 +80,7 @@ rule notebook_init:
         VDJB_parse_r='scripts/VDJB_parse.r.ipynb',
         VDJT_parse_r='scripts/VDJT_parse.r.ipynb',
         filter_r='scripts/filter.r.ipynb',
+        concat_stat_r='scripts/concat_stat.r.ipynb',
         visualize_r='scripts/visualize.r.ipynb',
     output: 
         mRNA_parse_r=Plog + '/mRNA_parse.r.ipynb',
@@ -82,6 +88,7 @@ rule notebook_init:
         VDJB_parse_r=Plog + '/VDJB_parse.r.ipynb',
         VDJT_parse_r=Plog + '/VDJT_parse.r.ipynb',
         filter_r=Plog + '/filter.r.ipynb',
+        concat_stat_r=Plog + 'concat_stat.r.ipynb',
         visualize_r=Plog + '/visualize.r.ipynb',
     resources: cpus=1
     log: e = Plog + '/notebook_init.e', o = Plog + '/notebook_init.o'
@@ -456,6 +463,31 @@ rule filter:
     conda: f'{pip_dir}/envs/visualize.yaml'
     notebook: rules.notebook_init.output.filter_r
 
+
+rule concat_stat:
+    input: 
+        filter_input = get_filter_input
+    output:
+        stats = Pstat + '/{sample}/stats.csv'
+    log: notebook = Plog + '/concat_stat/{sample}.r.ipynb', e = Plog + '/concat_stat/{sample}.e', o = Plog + '/concat_stat/{sample}.o'
+    params: metadata = config['metadata']
+    benchmark: Plog + '/concat_stat/{sample}.bmk'
+    resources: cpus=config['concat_stat_cpus']
+    conda: f'{pip_dir}/envs/visualize.yaml'
+    notebook: rules.notebook_init.output.concat_stat_r
+
+if config['run_batch_stat']:
+    rule batch_stat:
+        input: 
+            Lstats = expand(Pstat + '/{sample}/stats.csv', sample=Lsample),
+        output: 
+            batch_stat = Pstat + '/batch_stat.csv',
+        log: e = Plog + '/batch_stat.e', o = Plog + '/batch_stat.o'
+        resources: cpus=1
+        run: 
+            pd.concat([pd.read_csv(str(f)) for f in input.Lstats], axis=0).to_csv(output.batch_stat, index=False)
+
+
 ##################################
 ### visualize
 ##################################
@@ -490,7 +522,7 @@ rule visualize_rmd:
 ##################################
 ### Bcell tree
 ##################################
-if lambda wildcards:config[wildcards.sample]['VDJB']:
+if lambda wildcards: (config[wildcards.sample]['VDJB'] and config['run_tree']) :
     rule Bcell_tree:
         input:
             filter_dir = rules.filter.output.filter_dir
