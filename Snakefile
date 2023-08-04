@@ -60,6 +60,18 @@ rule all:
         VDJB_csv = [PVDJB + f'/{sample}/VDJB.csv' for sample in Lsample if config[sample]['VDJB']],
         VDJT_csv = [PVDJT + f'/{sample}/VDJT.csv' for sample in Lsample if config[sample]['VDJT']],
         FB_csv = [PFB + f'/{sample}/FB.csv' for sample in Lsample if config[sample]['FB']],
+        # filter
+        filter_stat = expand(Pfilter + '/{sample}/filter_stat.yaml', sample=Lsample),
+        # concat stat
+        stats = expand(Pstat + '/{sample}/stats.csv', sample=Lsample),
+        # batch stat
+        batch_stat = Pstat + '/batch_stat.csv' if config['run_batch_stat'] else [],
+        # visualzie
+        visualize_html = expand(Pvisualize + '/{sample}.html', sample=Lsample),
+        # B cell tree
+        Bcell_tree_H = [Ptree + f'/{sample}/Bcell_tree_H_igphyml-pass.tab' for sample in Lsample if (config[sample]['VDJB'] and config['run_tree'])]
+
+        
 
 wildcard_constraints:
     sample='[^/]+'
@@ -309,3 +321,117 @@ if lambda wildcards:config[wildcards.sample]['VDJT']:
         resources: cpus=config['VDJT_parse_cpus']
         conda: f'{pip_dir}/envs/VDJ.yaml'
         notebook: Plog + '/VDJT_parse.r.ipynb'
+
+
+
+##################################
+### filter
+##################################
+def get_filter_input(wildcards):
+    dirs = []
+    if config[wildcards.sample]['mRNA']:
+        dirs.append(rules.mRNA_parse.output.stat_dir)
+    if config[wildcards.sample]['FB']:
+        dirs.append(rules.FB_parse.output.stat_dir)
+    if config[wildcards.sample]['VDJB']:
+        dirs.append(rules.VDJB_parse.output.stat_dir)
+    if config[wildcards.sample]['VDJT']:
+        dirs.append(rules.VDJT_parse.output.stat_dir)
+    return dirs
+
+rule filter:
+    input: filter_input = get_filter_input,
+    output:
+        filter_dir = directory(Pfilter + '/{sample}'),
+        filter_stat = Pfilter + '/{sample}/filter_stat.yaml'
+    params: 
+        stat_dir = Pstat + '/{sample}',
+        Bcell_changeo_flt_H = Pfilter + '/{sample}/Bcell_changeo_flt_H.tsv',
+        Bcell_changeo_flt_L = Pfilter + '/{sample}/Bcell_changeo_flt_L.tsv'
+    log: notebook = Plog + '/filter/{sample}.r.ipynb', e = Plog + '/filter/{sample}.e', o = Plog + '/filter/{sample}.o'
+    benchmark: Plog + '/filter/{sample}.bmk'
+    resources: cpus=config['filter_cpus']
+    conda: f'{pip_dir}/envs/visualize.yaml'
+    notebook: Plog + '/filter.r.ipynb'
+
+
+rule concat_stat:
+    input: filter_input = get_filter_input
+    output: stats = Pstat + '/{sample}/stats.csv'
+    log: notebook = Plog + '/concat_stat/{sample}.r.ipynb', e = Plog + '/concat_stat/{sample}.e', o = Plog + '/concat_stat/{sample}.o'
+    params: metadata = config['metadata']
+    benchmark: Plog + '/concat_stat/{sample}.bmk'
+    resources: cpus=config['concat_stat_cpus']
+    conda: f'{pip_dir}/envs/visualize.yaml'
+    notebook: Plog + '/concat_stat.r.ipynb'
+
+if config['run_batch_stat']:
+    rule batch_stat:
+        input: 
+            Lstats = expand(Pstat + '/{sample}/stats.csv', sample=Lsample),
+        output: 
+            batch_stat = Pstat + '/batch_stat.csv',
+        log: e = Plog + '/batch_stat.e', o = Plog + '/batch_stat.o'
+        resources: cpus=1
+        run: 
+            pd.concat([pd.read_csv(str(f)) for f in input.Lstats], axis=0).to_csv(output.batch_stat, index=False)
+
+
+##################################
+### visualize
+##################################
+rule visualize:
+    input: filter_dir = rules.filter.output.filter_dir
+    output: visualize_rds = Pvisualize + '/{sample}.rds'
+    log: notebook = Plog + '/visualize/{sample}.r.ipynb', e = Plog + '/visualize/{sample}.e', o = Plog + '/visualize/{sample}.o'
+    params: 
+        stat_dir = Pstat + '/{sample}',
+        echarts_theme = f'{pip_dir}/src/echarts_theme/mytheme.json',
+        metadata = config['metadata']
+    benchmark: Plog + '/visualize/{sample}.bmk'
+    resources: cpus=config['visualize_cpus']
+    conda: f'{pip_dir}/envs/visualize.yaml'
+    notebook: Plog + '/visualize.r.ipynb'
+
+rule visualize_rmd:
+    input: visualize_rds = rules.visualize.output.visualize_rds
+    output: visualize_html = Pvisualize + '/{sample}.html'
+    log: e = Plog + '/visualize_rmd/{sample}.e', o = Plog + '/visualize_rmd/{sample}.o'
+    params: css_dir = f'{pip_dir}/src/visualize_css'
+    benchmark: Plog + '/visualize_rmd/{sample}.bmk'
+    resources: cpus=config['visualize_rmd_cpus']
+    conda: f'{pip_dir}/envs/visualize.yaml'
+    script: f'{pip_dir}/scripts/visualize.Rmd'
+
+
+
+
+##################################
+### Bcell tree
+##################################
+if lambda wildcards: (config[wildcards.sample]['VDJB'] and config['run_tree']) :
+    rule Bcell_tree:
+        input:
+            filter_dir = rules.filter.output.filter_dir
+        output:
+            Bcell_tree_H = Ptree + '/{sample}/Bcell_tree_H_igphyml-pass.tab',
+            Bcell_tree_L = Ptree + '/{sample}/Bcell_tree_L_igphyml-pass.tab',
+        log: e = Plog + '/Bcell_tree/{sample}.e', o = Plog + '/Bcell_tree/{sample}.o'
+        benchmark: Plog + '/Bcell_tree/{sample}.bmk'
+        resources: cpus=config['Bcell_tree_cpus']
+        conda: f'{pip_dir}/envs/VDJ.yaml'
+        params: 
+            Bcell_changeo_flt_H = rules.filter.params.Bcell_changeo_flt_H,
+            Bcell_changeo_flt_L = rules.filter.params.Bcell_changeo_flt_L,
+            outdir = Ptree + '/{sample}',
+            tree_sample = config['tree_sample']
+        shell:"""
+            BuildTrees.py -d {params.Bcell_changeo_flt_H} --collapse \\
+                --sample {params.tree_sample} --igphyml --clean all --nproc {resources.cpus} \\
+                --outdir {params.outdir} --outname Bcell_tree_H \\
+                1>>{log.o} 2>>{log.e}
+            BuildTrees.py -d {params.Bcell_changeo_flt_L} --collapse \\
+                --sample {params.tree_sample} --igphyml --clean all --nproc {resources.cpus} \\
+                --outdir {params.outdir} --outname Bcell_tree_L \\
+                1>>{log.o} 2>>{log.e}
+        """
