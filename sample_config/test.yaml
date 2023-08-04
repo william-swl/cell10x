@@ -6,7 +6,7 @@ outdir: /home/william/pipeline/cell10x/test/out
 srcdir: &srcdir /home/william/pipeline/cell10x/src
 Lsample:
   - test
-  # - test2
+  - test2
 species: &species human
 metadata: /home/william/pipeline/cell10x/sample_config/metadata/test.csv
 run_tree: False
@@ -119,6 +119,7 @@ visualize_rmd_cpus: 2
 # output
 count_mRNA_dir: per_sample_outs/{sample}/count/sample_filtered_feature_bc_matrix
 count_mRNA_mtx: per_sample_outs/{sample}/metrics_summary.csv
+count_FB_raw_dir: multi/count/raw_feature_bc_matrix
 count_FB_dir: per_sample_outs/{sample}/count/sample_filtered_feature_bc_matrix
 count_FB_mtx: per_sample_outs/{sample}/metrics_summary.csv
 count_VDJB_airr: per_sample_outs/{sample}/vdj_b/airr_rearrangement.tsv
