@@ -10,6 +10,7 @@ config <- replace_item(snakemake@config, snakemake@config[[sample]])
 # write feature_ref.csv
 if (config[[sample]][['FB']]) {
     id2seq <- config[[sample]][['id2seq']]
+    id2seq <- id2seq[!map_lgl(id2seq, is.null)]
     TBfb_ref <- map2_dfr(id2seq, names(id2seq), 
                          ~list2df(.x, colnames='sequence') %>% r2c('id') %>% mutate(type=.y)) %>%
         mutate(
