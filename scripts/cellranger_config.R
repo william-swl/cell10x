@@ -30,7 +30,9 @@ out <- file(snakemake@output[['cellranger_config']], 'w')
 
 # reference
 writeLines(str_glue("[gene-expression]\nreference,{config[['gex_ref']]}\nchemistry,SC5P-R2"), out)
-writeLines(str_glue("[feature]\nreference,{snakemake@params[['feature_ref']]}"), out)
+if (config[[sample]][['FB']]) {
+    writeLines(str_glue("[feature]\nreference,{snakemake@params[['feature_ref']]}"), out)
+}
 writeLines(str_glue("[vdj]\nreference,{config[['vdj_ref']]}"), out)
 
 # library

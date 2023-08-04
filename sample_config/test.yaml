@@ -5,8 +5,8 @@ indir: /home/william/pipeline/cell10x/test/rawdata
 outdir: /home/william/pipeline/cell10x/test/out
 srcdir: &srcdir /home/william/pipeline/cell10x/src
 Lsample:
-  # - test
-  - test2
+  - test
+  # - test2
 species: &species human
 metadata: /home/william/pipeline/cell10x/sample_config/metadata/test.csv
 run_tree: False
@@ -124,6 +124,9 @@ count_FB_mtx: per_sample_outs/{sample}/metrics_summary.csv
 count_VDJB_airr: per_sample_outs/{sample}/vdj_b/airr_rearrangement.tsv
 count_VDJB_anno: per_sample_outs/{sample}/vdj_b/filtered_contig_annotations.csv
 count_VDJB_mtx: per_sample_outs/{sample}/metrics_summary.csv
+count_VDJT_airr: per_sample_outs/{sample}/vdj_t/airr_rearrangement.tsv
+count_VDJT_anno: per_sample_outs/{sample}/vdj_t/filtered_contig_annotations.csv
+count_VDJT_mtx: per_sample_outs/{sample}/metrics_summary.csv
 
 
 

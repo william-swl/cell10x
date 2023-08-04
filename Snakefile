@@ -56,7 +56,9 @@ rule all:
         # VDJ
         VDJB_igblast_tsv = expand(PVDJB + '/{sample}/igblast_airr.tsv',sample=Lsample),
         # parse
+        mRNA_csv = [PmRNA + f'/{sample}/mRNA.csv' for sample in Lsample if config[sample]['mRNA']],
         VDJB_csv = [PVDJB + f'/{sample}/VDJB.csv' for sample in Lsample if config[sample]['VDJB']],
+        VDJT_csv = [PVDJT + f'/{sample}/VDJT.csv' for sample in Lsample if config[sample]['VDJT']],
         FB_csv = [PFB + f'/{sample}/FB.csv' for sample in Lsample if config[sample]['FB']],
 
 wildcard_constraints:
@@ -106,6 +108,23 @@ rule count:
             1>{log.o} 2>{log.e}
         cd -
         """
+
+##################################
+### mRNA
+##################################
+if lambda wildcards:config[wildcards.sample]['mRNA']:
+    rule mRNA_parse:
+        input: count_dir = rules.count.output.count_dir
+        output:
+            mRNA_csv = PmRNA + '/{sample}/mRNA.csv',
+            mRNA_rds = PmRNA + '/{sample}/mRNA.rds',
+            mRNA_stat = PmRNA + '/{sample}/mRNA_stat.yaml',
+            stat_dir = directory(Pstat + '/{sample}/mRNA')
+        log: notebook = Plog + '/mRNA_parse/{sample}.r.ipynb', e = Plog + '/mRNA_parse/{sample}.e', o = Plog + '/mRNA_parse/{sample}.o'
+        benchmark: Plog + '/mRNA_parse/{sample}.bmk'
+        resources: cpus=config['mRNA_parse_cpus']
+        conda: f'{pip_dir}/envs/RNA.yaml'
+        notebook: Plog + '/mRNA_parse.r.ipynb'
 
 
 
@@ -272,3 +291,21 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
         resources: cpus=config['VDJB_parse_cpus']
         conda: f'{pip_dir}/envs/VDJ.yaml'
         notebook: Plog + '/VDJB_parse.r.ipynb'
+
+
+##################################
+### VDJT
+##################################
+if lambda wildcards:config[wildcards.sample]['VDJT']:
+    rule VDJT_parse:
+        input:
+            count_dir = rules.count.output.count_dir,
+        output:
+            VDJT_csv = PVDJT + '/{sample}/VDJT.csv',
+            VDJT_stat = PVDJT + '/{sample}/VDJT_stat.yaml',
+            stat_dir = directory(Pstat + '/{sample}/VDJT')
+        log: notebook = Plog + '/VDJT_parse/{sample}.r.ipynb', e = Plog + '/VDJT_parse/{sample}.e', o = Plog + '/VDJT_parse/{sample}.o'
+        benchmark: Plog + '/VDJT_parse/{sample}.bmk'
+        resources: cpus=config['VDJT_parse_cpus']
+        conda: f'{pip_dir}/envs/VDJ.yaml'
+        notebook: Plog + '/VDJT_parse.r.ipynb'

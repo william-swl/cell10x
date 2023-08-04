@@ -58,6 +58,7 @@ rule all:
         VDJT_csv = [PVDJT + f'/{sample}/VDJT.csv' for sample in Lsample if config[sample]['VDJT']],
         # parse FB
         FB_csv = [PFB + f'/{sample}/FB.csv' for sample in Lsample if config[sample]['FB']],
+
         # filter
         filter_stat = expand(Pfilter + '/{sample}/filter_stat.yaml', sample=Lsample),
         # concat stat
