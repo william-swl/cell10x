@@ -206,7 +206,6 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
 
     rule VDJB_anarci:
         input: 
-            VDJB_airr = rules.count.output.count_dir + f"/{config['count_VDJB_airr']}",
             VDJB_igblast_tsv = rules.VDJB_igblast.output.VDJB_igblast_tsv
         output:
             VDJB_orf_aa_fa = PVDJB + '/{sample}/seq_orf_aa.fasta',
@@ -220,12 +219,15 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
         log: e = Plog + '/VDJB_anarci/{sample}.e', o = Plog + '/VDJB_anarci/{sample}.o'
         benchmark: Plog + '/VDJB_anarci/{sample}.bmk'
         resources: cpus=config['VDJB_anarci_cpus']
-        params: outdir = PVDJB + '/{sample}', ext_numbering = config['ext_numbering']
+        params: 
+            outdir = PVDJB + '/{sample}', 
+            ext_numbering = config['ext_numbering'],
+            VDJB_airr = rules.count.output.count_dir + f"/{config['count_VDJB_airr']}"
         conda: f'{pip_dir}/envs/VDJ.yaml'
         shell:"""
             # fetch sequences in ORF
             R -e " \
-                x <- readr::read_tsv('{input.VDJB_airr}'); \
+                x <- readr::read_tsv('{params.VDJB_airr}'); \
                 genogamesh::parse_CellRanger_vdjseq(x, file='{output.VDJB_orf_aa_fa}', fa_content='seq_orf_aa'); \
                 pre_y <- dplyr::pull(readr::read_tsv('{input.VDJB_igblast_tsv}'), germline_alignment_aa, sequence_id); \
                 y <- stringr::str_replace_all(pre_y, '-', ''); names(y) <- names(pre_y); \
