@@ -131,7 +131,7 @@ if lambda wildcards:config[wildcards.sample]['FB']:
 ##################################
 if lambda wildcards:config[wildcards.sample]['VDJB']:
     rule VDJB_igblast:
-        input: VDJB_airr = rules.count.output.count_dir + f"/{config['count_VDJB_airr']}",
+        input: count_dir = rules.count.output.count_dir
         output:
             VDJB_orf_nt_fa = PVDJB + '/{sample}/seq_orf_nt.fasta',
             VDJB_igblast_tsv = PVDJB + '/{sample}/igblast_airr.tsv',
@@ -141,12 +141,13 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
         resources: cpus=config['VDJB_igblast_cpus']
         params: 
             igblast_VDJB_ref_prefix = config['igblast_VDJB_ref_prefix'],
-            igblast_aux = config['igblast_aux']
+            igblast_aux = config['igblast_aux'],
+            VDJB_airr = rules.count.output.count_dir + f"/{config['count_VDJB_airr']}"
         conda: f'{pip_dir}/envs/VDJ.yaml'
         shell:"""
             # fetch sequences in ORF
             R -e " \
-                x <- readr::read_tsv('{input.VDJB_airr}'); \
+                x <- readr::read_tsv('{params.VDJB_airr}'); \
                 genogamesh::parse_CellRanger_vdjseq(x, file='{output.VDJB_orf_nt_fa}', fa_content='seq_orf_nt') \
                 " 1>>{log.o} 2>>{log.e}
             
