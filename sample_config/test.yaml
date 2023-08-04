@@ -5,7 +5,7 @@ indir: /home/william/pipeline/cell10x/test/rawdata
 outdir: /home/william/pipeline/cell10x/test/out
 srcdir: &srcdir /home/william/pipeline/cell10x/src
 Lsample:
-  - test
+  # - test
   - test2
 species: &species human
 metadata: /home/william/pipeline/cell10x/sample_config/metadata/test.csv
@@ -98,10 +98,7 @@ tree_sample: 100
 ######## Resources
 ##############################
 qc_cpus: 2
-mRNA_count_cpus: 4
-FB_count_cpus: 4
-VDJB_count_cpus: 4
-VDJT_count_cpus: 4
+count_cpus: 3
 mRNA_parse_cpus: 2
 FB_parse_cpus: 2
 VDJB_igblast_cpus: 2
@@ -119,6 +116,17 @@ visualize_rmd_cpus: 2
 ##############################
 ######## Constant
 ##############################
+# output
+count_mRNA_dir: per_sample_outs/{sample}/count/sample_filtered_feature_bc_matrix
+count_mRNA_mtx: per_sample_outs/{sample}/metrics_summary.csv
+count_FB_dir: per_sample_outs/{sample}/count/sample_filtered_feature_bc_matrix
+count_FB_mtx: per_sample_outs/{sample}/metrics_summary.csv
+count_VDJB_airr: per_sample_outs/{sample}/vdj_b/airr_rearrangement.tsv
+count_VDJB_anno: per_sample_outs/{sample}/vdj_b/filtered_contig_annotations.csv
+count_VDJB_mtx: per_sample_outs/{sample}/metrics_summary.csv
+
+
+
 # software
 cellranger: !!python/object/apply:os.path.join [*srcdir, "cellranger-7.1.0/bin/cellranger"]
 

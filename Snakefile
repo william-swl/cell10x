@@ -38,66 +38,29 @@ onstart:
     time_start = time.strftime("%y%m%d_%H%M%S", time.localtime())
     smk_file_name = workflow.snakefile.split('/')[-1]
     shutil.copyfile(workflow.snakefile, f'{Plog}/all/{time_start}_{smk_file_name}')
+    for f in os.listdir(f'{pip_dir}/scripts'):
+        if f.endswith('.r.ipynb'):
+            pycones.nb_kernel_switch(f'{pip_dir}/scripts/{f}', f'{Plog}/{f}', kernel='r')
+        elif f.endswith('.py.ipynb'):
+            pycones.nb_kernel_switch(f'{pip_dir}/scripts/{f}', f'{Plog}/{f}', kernel='python')
 
 
 rule all:
     input:
         # qc
         qc_html = expand(Pqc + '/{sample}/multiqc/{sample}_multiqc_report.html',sample=Lsample),
+        # count config
+        cellranger_config = expand(Pcount + '/{sample}/cellranger_config.csv', sample=Lsample),
         # count
-        mRNA_count_dir = [Pcount + f'/{sample}/{sample}-mRNA/outs' for sample in Lsample if config[sample]['mRNA']],
-        FB_ref = [Pcount + f'/{sample}/feature_ref.csv' for sample in Lsample if config[sample]['FB']],
-        FB_count_dir = [Pcount + f'/{sample}/{sample}-FB/outs' for sample in Lsample if config[sample]['FB']],
-        VDJB_count_dir = [Pcount + f'/{sample}/{sample}-VDJB/outs' for sample in Lsample if config[sample]['VDJB']],
-        VDJT_count_dir = [Pcount + f'/{sample}/{sample}-VDJT/outs' for sample in Lsample if config[sample]['VDJT']],
-        # parse mRNA
-        mRNA_csv = [PmRNA + f'/{sample}/mRNA.csv' for sample in Lsample if config[sample]['mRNA']],
-        # parse VDJB
+        count_dir = expand(Pcount + '/{sample}/{sample}/outs', sample=Lsample),
+        # VDJ
+        VDJB_igblast_tsv = expand(PVDJB + '/{sample}/igblast_airr.tsv',sample=Lsample),
+        # parse
         VDJB_csv = [PVDJB + f'/{sample}/VDJB.csv' for sample in Lsample if config[sample]['VDJB']],
-        # parse VDJT
-        VDJT_csv = [PVDJT + f'/{sample}/VDJT.csv' for sample in Lsample if config[sample]['VDJT']],
-        # parse FB
         FB_csv = [PFB + f'/{sample}/FB.csv' for sample in Lsample if config[sample]['FB']],
-        # filter
-        filter_stat = expand(Pfilter + '/{sample}/filter_stat.yaml', sample=Lsample),
-        # concat stat
-        stats = expand(Pstat + '/{sample}/stats.csv', sample=Lsample),
-        # batch stat
-        batch_stat = Pstat + '/batch_stat.csv' if config['run_batch_stat'] else [],
-        # visualzie
-        visualize_html = expand(Pvisualize + '/{sample}.html', sample=Lsample),
-        # B cell tree
-        Bcell_tree_H = [Ptree + f'/{sample}/Bcell_tree_H_igphyml-pass.tab' for sample in Lsample if (config[sample]['VDJB'] and config['run_tree'])]
-
 
 wildcard_constraints:
     sample='[^/]+'
-
-rule notebook_init:
-    input: 
-        mRNA_parse_r='scripts/mRNA_parse.r.ipynb',
-        FB_parse_r='scripts/FB_parse.r.ipynb',
-        VDJB_parse_r='scripts/VDJB_parse.r.ipynb',
-        VDJT_parse_r='scripts/VDJT_parse.r.ipynb',
-        filter_r='scripts/filter.r.ipynb',
-        concat_stat_r='scripts/concat_stat.r.ipynb',
-        visualize_r='scripts/visualize.r.ipynb',
-    output: 
-        mRNA_parse_r=Plog + '/mRNA_parse.r.ipynb',
-        FB_parse_r=Plog + '/FB_parse.r.ipynb',
-        VDJB_parse_r=Plog + '/VDJB_parse.r.ipynb',
-        VDJT_parse_r=Plog + '/VDJT_parse.r.ipynb',
-        filter_r=Plog + '/filter.r.ipynb',
-        concat_stat_r=Plog + 'concat_stat.r.ipynb',
-        visualize_r=Plog + '/visualize.r.ipynb',
-    resources: cpus=1
-    log: e = Plog + '/notebook_init.e', o = Plog + '/notebook_init.o'
-    run:
-        for k, f in input.items():
-            if f.endswith('.r.ipynb'):
-                pycones.nb_kernel_switch(f, output[k], kernel='r')
-            elif f.endswith('.py.ipynb'):
-                pycones.nb_kernel_switch(f, output[k], kernel='python')
 
 
 rule qc:
@@ -118,101 +81,40 @@ rule qc:
         cp {output.qc_data} {params.stat_dir}
         """
 
+rule cellranger_config:
+    output: cellranger_config = Pcount + '/{sample}/cellranger_config.csv',
+    log: e = Plog + '/cellranger_config/{sample}.e', o = Plog + '/cellranger_config/{sample}.o'
+    benchmark: Plog + '/cellranger_config/{sample}.bmk'
+    resources: cpus=1
+    params: 
+        feature_ref=Pcount + '/{sample}/feature_ref.csv'
+    conda: f'{pip_dir}/envs/RNA.yaml'
+    script: f'{pip_dir}/scripts/cellranger_config.R'
 
-##################################
-### mRNA
-##################################
-if lambda wildcards:config[wildcards.sample]['mRNA']:
-    rule mRNA_count:
-        input: fq_dir = indir + '/{sample}'
-        output: mRNA_count_dir = directory(Pcount + '/{sample}/{sample}-mRNA/outs')
-        params: gex_ref = config['gex_ref']
-        log: e = Plog + '/mRNA_count/{sample}.e', o = Plog + '/mRNA_count/{sample}.o'
-        benchmark: Plog + '/mRNA_count/{sample}.bmk'
-        resources: cpus=config['mRNA_count_cpus']
-        conda: f'{pip_dir}/envs/upstream.yaml'
-        shell:"""
-            cd {Pcount}/{wildcards.sample}
-            rm -r {Pcount}/{wildcards.sample}/{wildcards.sample}-mRNA
-            {cellranger} count --id={wildcards.sample}-mRNA \\
-                --transcriptome={params.gex_ref} \\
-                --fastqs={input.fq_dir} \\
-                --sample={wildcards.sample}-mRNA \\
-                --localcores {resources.cpus} --mempercore 4 \\
-                1>{log.o} 2>{log.e}
-            cd -
-            """
 
-    rule mRNA_parse:
-        input:
-            mRNA_count_dir = rules.mRNA_count.output.mRNA_count_dir,
-            mRNA_parse_r = rules.notebook_init.output.mRNA_parse_r
-        output:
-            mRNA_csv = PmRNA + '/{sample}/mRNA.csv',
-            mRNA_rds = PmRNA + '/{sample}/mRNA.rds',
-            mRNA_stat = PmRNA + '/{sample}/mRNA_stat.yaml',
-            stat_dir = directory(Pstat + '/{sample}/mRNA')
-        log: notebook = Plog + '/mRNA_parse/{sample}.r.ipynb', e = Plog + '/mRNA_parse/{sample}.e', o = Plog + '/mRNA_parse/{sample}.o'
-        benchmark: Plog + '/mRNA_parse/{sample}.bmk'
-        resources: cpus=config['mRNA_parse_cpus']
-        conda: f'{pip_dir}/envs/RNA.yaml'
-        notebook: rules.notebook_init.output.mRNA_parse_r
+rule count:
+    input: cellranger_config = rules.cellranger_config.output.cellranger_config,
+    output: count_dir = directory(Pcount + '/{sample}/{sample}/outs')
+    log: e = Plog + '/count/{sample}.e', o = Plog + '/count/{sample}.o'
+    benchmark: Plog + '/count/{sample}.bmk'
+    resources: cpus=config['count_cpus']
+    shell:"""
+        cd {Pcount}/{wildcards.sample}
+        rm -r {Pcount}/{wildcards.sample}/{wildcards.sample}
+        {cellranger} multi --id={wildcards.sample} \\
+            --csv={input} --localcores {resources.cpus} --mempercore 4 \\
+            1>{log.o} 2>{log.e}
+        cd -
+        """
+
+
 
 ##################################
 ### FB
 ##################################
 if lambda wildcards:config[wildcards.sample]['FB']:
-    rule FB_ref:
-        input: fq_dir = indir + '/{sample}'
-        output: 
-            FB_ref = Pcount + '/{sample}/feature_ref.csv',
-            FB_lib = Pcount + '/{sample}/feature_lib.csv',
-        resources: cpus=1
-        log: e = Plog + '/FB_ref/{sample}.e', o = Plog + '/FB_ref/{sample}.o'
-        run:
-            Dsample = config[wildcards.sample]
-            with open(output['FB_ref'], 'w') as Ffb:
-                Ffb.write('id,name,read,pattern,sequence,feature_type\n')
-                for t, d in Dsample['id2seq'].items():
-                    if d:
-                        for id, seq in d.items():
-                            if re.search('[^\x00-\x7F]| ', id):
-                                print(f'blank or non-ASCII in feature_barcode id: {id}')
-                                raise RuntimeError(f'blank or non-ASCII in feature_barcode id: {id}')
-                            Lline = [id,f'{t}_{id}',config['FB_read'],config['FB_pattern'],seq,config['FB_type']]
-                            Ffb.write(','.join(Lline) + '\n')
-            with open(output['FB_lib'], 'w') as Flib:
-                Flib.write('fastqs,sample,library_type\n')
-                Lline = [input['fq_dir'], wildcards.sample + '-FB',config['FB_type']]
-                Flib.write(','.join(Lline) + '\n')
-
-
-    rule FB_count:
-        input: 
-            FB_ref = rules.FB_ref.output.FB_ref,
-            FB_lib = rules.FB_ref.output.FB_lib,
-        output: FB_count_dir = directory(Pcount + '/{sample}/{sample}-FB/outs')
-        log: e = Plog + '/FB_count/{sample}.e', o = Plog + '/FB_count/{sample}.o'
-        benchmark: Plog + '/FB_count/{sample}.bmk'
-        resources: cpus=config['FB_count_cpus']
-        params: gex_ref = config['gex_ref']
-        conda: f'{pip_dir}/envs/upstream.yaml'
-        shell:"""
-            cd {Pcount}/{wildcards.sample}
-            rm -r {Pcount}/{wildcards.sample}/{wildcards.sample}-FB
-            {cellranger} count --id={wildcards.sample}-FB \\
-                --transcriptome={params.gex_ref} \\
-                --feature-ref {input.FB_ref} \\
-                --libraries {input.FB_lib} \\
-                --localcores {resources.cpus} --mempercore 4 \\
-                1>{log.o} 2>{log.e}
-            cd -
-            """
-
     rule FB_parse:
-        input:
-            FB_count_dir = rules.FB_count.output.FB_count_dir,
-            FB_parse_r = rules.notebook_init.output.FB_parse_r
+        input: count_dir = rules.count.output.count_dir
         output:
             FB_csv = PFB + '/{sample}/FB.csv',
             FB_stat = PFB + '/{sample}/FB_stat.yaml',
@@ -221,35 +123,15 @@ if lambda wildcards:config[wildcards.sample]['FB']:
         benchmark: Plog + '/FB_parse/{sample}.bmk'
         resources: cpus=config['FB_parse_cpus']
         conda: f'{pip_dir}/envs/RNA.yaml'
-        notebook: rules.notebook_init.output.FB_parse_r
+        notebook: Plog + '/FB_parse.r.ipynb'
 
 
 ##################################
 ### VDJB
 ##################################
 if lambda wildcards:config[wildcards.sample]['VDJB']:
-    rule VDJB_count:
-        input: fq_dir = indir + '/{sample}'
-        output: VDJB_count_dir = directory(Pcount + '/{sample}/{sample}-VDJB/outs')
-        params: vdj_ref = config['vdj_ref']
-        log: e = Plog + '/VDJB_count/{sample}.e', o = Plog + '/VDJB_count/{sample}.o'
-        benchmark: Plog + '/VDJB_count/{sample}.bmk'
-        resources: cpus=config['VDJB_count_cpus']
-        conda: f'{pip_dir}/envs/upstream.yaml'
-        shell:"""
-            cd {Pcount}/{wildcards.sample}
-            rm -r {Pcount}/{wildcards.sample}/{wildcards.sample}-VDJB
-            {cellranger} vdj --id={wildcards.sample}-VDJB \\
-                --reference={params.vdj_ref} \\
-                --fastqs={input.fq_dir} \\
-                --sample={wildcards.sample}-VDJB \\
-                --localcores {resources.cpus} --mempercore 4 \\
-                1>{log.o} 2>{log.e}
-            cd -
-            """
-
     rule VDJB_igblast:
-        input: VDJB_count_dir = rules.VDJB_count.output.VDJB_count_dir
+        input: VDJB_airr = rules.count.output.count_dir + f"/{config['count_VDJB_airr']}",
         output:
             VDJB_orf_nt_fa = PVDJB + '/{sample}/seq_orf_nt.fasta',
             VDJB_igblast_tsv = PVDJB + '/{sample}/igblast_airr.tsv',
@@ -264,7 +146,7 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
         shell:"""
             # fetch sequences in ORF
             R -e " \
-                x <- readr::read_tsv('{input.VDJB_count_dir}/airr_rearrangement.tsv'); \
+                x <- readr::read_tsv('{input.VDJB_airr}'); \
                 genogamesh::parse_CellRanger_vdjseq(x, file='{output.VDJB_orf_nt_fa}', fa_content='seq_orf_nt') \
                 " 1>>{log.o} 2>>{log.e}
             
@@ -288,7 +170,6 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
     rule VDJB_changeo:
         input:
             VDJB_orf_nt_fa = rules.VDJB_igblast.output.VDJB_orf_nt_fa,
-            VDJB_count_dir = rules.VDJB_count.output.VDJB_count_dir,
             VDJB_igblast_txt = rules.VDJB_igblast.output.VDJB_igblast_txt
         output: 
             VDJB_changeo_db = PVDJB + '/{sample}/changeo_db-pass.tsv',
@@ -324,7 +205,7 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
 
     rule VDJB_anarci:
         input: 
-            VDJB_count_dir = rules.VDJB_count.output.VDJB_count_dir,
+            VDJB_airr = rules.count.output.count_dir + f"/{config['count_VDJB_airr']}",
             VDJB_igblast_tsv = rules.VDJB_igblast.output.VDJB_igblast_tsv
         output:
             VDJB_orf_aa_fa = PVDJB + '/{sample}/seq_orf_aa.fasta',
@@ -343,7 +224,7 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
         shell:"""
             # fetch sequences in ORF
             R -e " \
-                x <- readr::read_tsv('{input.VDJB_count_dir}/airr_rearrangement.tsv'); \
+                x <- readr::read_tsv('{input.VDJB_airr}'); \
                 genogamesh::parse_CellRanger_vdjseq(x, file='{output.VDJB_orf_aa_fa}', fa_content='seq_orf_aa'); \
                 pre_y <- dplyr::pull(readr::read_tsv('{input.VDJB_igblast_tsv}'), germline_alignment_aa, sequence_id); \
                 y <- stringr::str_replace_all(pre_y, '-', ''); names(y) <- names(pre_y); \
@@ -366,10 +247,9 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
                 --assign_germline 1>>{log.o} 2>>{log.e}
         """
 
-
     rule VDJB_parse:
         input:
-            VDJB_count_dir = rules.VDJB_count.output.VDJB_count_dir,
+            count_dir = rules.count.output.count_dir,
             VDJB_igblast_tsv = rules.VDJB_igblast.output.VDJB_igblast_tsv,
             VDJB_igblast_txt = rules.VDJB_igblast.output.VDJB_igblast_txt,
             VDJB_changeo = rules.VDJB_changeo.output.VDJB_changeo,
@@ -380,7 +260,6 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             VDJB_gm_anarci_KL = rules.VDJB_anarci.output.VDJB_gm_anarci_KL,
             VDJB_ext_anarci_H = rules.VDJB_anarci.output.VDJB_ext_anarci_H,
             VDJB_ext_anarci_KL = rules.VDJB_anarci.output.VDJB_ext_anarci_KL,
-            VDJB_parse_r = rules.notebook_init.output.VDJB_parse_r
         output:
             VDJB_csv = PVDJB + '/{sample}/VDJB.csv',
             VDJB_stat = PVDJB + '/{sample}/VDJB_stat.yaml',
@@ -389,162 +268,4 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
         benchmark: Plog + '/VDJB_parse/{sample}.bmk'
         resources: cpus=config['VDJB_parse_cpus']
         conda: f'{pip_dir}/envs/VDJ.yaml'
-        notebook: rules.notebook_init.output.VDJB_parse_r
-
-
-
-##################################
-### VDJT
-##################################
-if lambda wildcards:config[wildcards.sample]['VDJT']:
-    rule VDJT_count:
-        input: fq_dir = indir + '/{sample}'
-        output: VDJT_count_dir = directory(Pcount + '/{sample}/{sample}-VDJT/outs')
-        params: vdj_ref = config['vdj_ref']
-        log: e = Plog + '/VDJT_count/{sample}.e', o = Plog + '/VDJT_count/{sample}.o'
-        benchmark: Plog + '/VDJT_count/{sample}.bmk'
-        resources: cpus=config['VDJT_count_cpus']
-        conda: f'{pip_dir}/envs/upstream.yaml'
-        shell:"""
-            cd {Pcount}/{wildcards.sample}
-            rm -r {Pcount}/{wildcards.sample}/{wildcards.sample}-VDJT
-            {cellranger} vdj --id={wildcards.sample}-VDJT \\
-                --reference={params.vdj_ref} \\
-                --fastqs={input.fq_dir} \\
-                --sample={wildcards.sample}-VDJT \\
-                --localcores {resources.cpus} --mempercore 4 \\
-                1>{log.o} 2>{log.e}
-            cd -
-            """
-
-    rule VDJT_parse:
-        input:
-            VDJT_count_dir = rules.VDJT_count.output.VDJT_count_dir,
-            VDJT_parse_r = rules.notebook_init.output.VDJT_parse_r
-        output:
-            VDJT_csv = PVDJT + '/{sample}/VDJT.csv',
-            VDJT_stat = PVDJT + '/{sample}/VDJT_stat.yaml',
-            stat_dir = directory(Pstat + '/{sample}/VDJT')
-        log: notebook = Plog + '/VDJT_parse/{sample}.r.ipynb', e = Plog + '/VDJT_parse/{sample}.e', o = Plog + '/VDJT_parse/{sample}.o'
-        benchmark: Plog + '/VDJT_parse/{sample}.bmk'
-        resources: cpus=config['VDJT_parse_cpus']
-        conda: f'{pip_dir}/envs/VDJ.yaml'
-        notebook: rules.notebook_init.output.VDJT_parse_r
-
-##################################
-### filter
-##################################
-def get_filter_input(wildcards):
-    dirs = []
-    if config[wildcards.sample]['mRNA']:
-        dirs.append(rules.mRNA_parse.output.stat_dir)
-    if config[wildcards.sample]['FB']:
-        dirs.append(rules.FB_parse.output.stat_dir)
-    if config[wildcards.sample]['VDJB']:
-        dirs.append(rules.VDJB_parse.output.stat_dir)
-    if config[wildcards.sample]['VDJT']:
-        dirs.append(rules.VDJT_parse.output.stat_dir)
-    return dirs
-
-rule filter:
-    input: 
-        filter_input = get_filter_input,
-        filter_r = rules.notebook_init.output.filter_r
-    output:
-        filter_dir = directory(Pfilter + '/{sample}'),
-        filter_stat = Pfilter + '/{sample}/filter_stat.yaml'
-    params: 
-        stat_dir = Pstat + '/{sample}',
-        Bcell_changeo_flt_H = Pfilter + '/{sample}/Bcell_changeo_flt_H.tsv',
-        Bcell_changeo_flt_L = Pfilter + '/{sample}/Bcell_changeo_flt_L.tsv'
-    log: notebook = Plog + '/filter/{sample}.r.ipynb', e = Plog + '/filter/{sample}.e', o = Plog + '/filter/{sample}.o'
-    benchmark: Plog + '/filter/{sample}.bmk'
-    resources: cpus=config['filter_cpus']
-    conda: f'{pip_dir}/envs/visualize.yaml'
-    notebook: rules.notebook_init.output.filter_r
-
-
-rule concat_stat:
-    input: 
-        filter_input = get_filter_input
-    output:
-        stats = Pstat + '/{sample}/stats.csv'
-    log: notebook = Plog + '/concat_stat/{sample}.r.ipynb', e = Plog + '/concat_stat/{sample}.e', o = Plog + '/concat_stat/{sample}.o'
-    params: metadata = config['metadata']
-    benchmark: Plog + '/concat_stat/{sample}.bmk'
-    resources: cpus=config['concat_stat_cpus']
-    conda: f'{pip_dir}/envs/visualize.yaml'
-    notebook: rules.notebook_init.output.concat_stat_r
-
-if config['run_batch_stat']:
-    rule batch_stat:
-        input: 
-            Lstats = expand(Pstat + '/{sample}/stats.csv', sample=Lsample),
-        output: 
-            batch_stat = Pstat + '/batch_stat.csv',
-        log: e = Plog + '/batch_stat.e', o = Plog + '/batch_stat.o'
-        resources: cpus=1
-        run: 
-            pd.concat([pd.read_csv(str(f)) for f in input.Lstats], axis=0).to_csv(output.batch_stat, index=False)
-
-
-##################################
-### visualize
-##################################
-rule visualize:
-    input:
-        filter_dir = rules.filter.output.filter_dir
-    output:
-        visualize_rds = Pvisualize + '/{sample}.rds'
-    log: notebook = Plog + '/visualize/{sample}.r.ipynb', e = Plog + '/visualize/{sample}.e', o = Plog + '/visualize/{sample}.o'
-    params: 
-        stat_dir = Pstat + '/{sample}',
-        echarts_theme = f'{pip_dir}/src/echarts_theme/mytheme.json',
-        metadata = config['metadata']
-    benchmark: Plog + '/visualize/{sample}.bmk'
-    resources: cpus=config['visualize_cpus']
-    conda: f'{pip_dir}/envs/visualize.yaml'
-    notebook: rules.notebook_init.output.visualize_r
-
-rule visualize_rmd:
-    input:
-        visualize_rds = rules.visualize.output.visualize_rds
-    output:
-        visualize_html = Pvisualize + '/{sample}.html'
-    log: e = Plog + '/visualize_rmd/{sample}.e', o = Plog + '/visualize_rmd/{sample}.o'
-    params: css_dir = f'{pip_dir}/src/visualize_css'
-    benchmark: Plog + '/visualize_rmd/{sample}.bmk'
-    resources: cpus=config['visualize_rmd_cpus']
-    conda: f'{pip_dir}/envs/visualize.yaml'
-    script: f'{pip_dir}/scripts/visualize.Rmd'
-
-
-##################################
-### Bcell tree
-##################################
-if lambda wildcards: (config[wildcards.sample]['VDJB'] and config['run_tree']) :
-    rule Bcell_tree:
-        input:
-            filter_dir = rules.filter.output.filter_dir
-        output:
-            Bcell_tree_H = Ptree + '/{sample}/Bcell_tree_H_igphyml-pass.tab',
-            Bcell_tree_L = Ptree + '/{sample}/Bcell_tree_L_igphyml-pass.tab',
-        log: e = Plog + '/Bcell_tree/{sample}.e', o = Plog + '/Bcell_tree/{sample}.o'
-        benchmark: Plog + '/Bcell_tree/{sample}.bmk'
-        resources: cpus=config['Bcell_tree_cpus']
-        conda: f'{pip_dir}/envs/VDJ.yaml'
-        params: 
-            Bcell_changeo_flt_H = rules.filter.params.Bcell_changeo_flt_H,
-            Bcell_changeo_flt_L = rules.filter.params.Bcell_changeo_flt_L,
-            outdir = Ptree + '/{sample}',
-            tree_sample = config['tree_sample']
-        shell:"""
-            BuildTrees.py -d {params.Bcell_changeo_flt_H} --collapse \\
-                --sample {params.tree_sample} --igphyml --clean all --nproc {resources.cpus} \\
-                --outdir {params.outdir} --outname Bcell_tree_H \\
-                1>>{log.o} 2>>{log.e}
-            BuildTrees.py -d {params.Bcell_changeo_flt_L} --collapse \\
-                --sample {params.tree_sample} --igphyml --clean all --nproc {resources.cpus} \\
-                --outdir {params.outdir} --outname Bcell_tree_L \\
-                1>>{log.o} 2>>{log.e}
-        """
+        notebook: Plog + '/VDJB_parse.r.ipynb'
