@@ -296,6 +296,7 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             VDJB_ext_anarci_KL = rules.VDJB_anarci.output.VDJB_ext_anarci_KL,
         output:
             VDJB_csv = PVDJB + '/{sample}/VDJB.csv',
+            VDJB_mut = PVDJB + '/{sample}/VDJB_mut.csv',
             VDJB_stat = PVDJB + '/{sample}/VDJB_stat.yaml',
             stat_dir = directory(Pstat + '/{sample}/VDJB')
         log: notebook = Plog + '/VDJB_parse/{sample}.r.ipynb', e = Plog + '/VDJB_parse/{sample}.e', o = Plog + '/VDJB_parse/{sample}.o'
