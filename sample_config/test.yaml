@@ -135,23 +135,23 @@ count_VDJT_mtx: per_sample_outs/{sample}/metrics_summary.csv
 cellranger: !!python/object/apply:os.path.join [*srcdir, "cellranger-7.1.0/bin/cellranger"]
 
 # gene expression reference
-gex_ref_dir: &gex_ref_dir !!python/object/apply:pyutils.list_join [*species, "-gex-ref"]
+gex_ref_dir: &gex_ref_dir !!python/object/apply:pycones.list_join [*species, "-gex-ref"]
 gex_ref: !!python/object/apply:os.path.join [*srcdir, *gex_ref_dir]
 
 # VDJ reference
-vdj_ref_dir: &vdj_ref_dir !!python/object/apply:pyutils.list_join [*species, "-vdj-ref"]
+vdj_ref_dir: &vdj_ref_dir !!python/object/apply:pycones.list_join [*species, "-vdj-ref"]
 vdj_ref: !!python/object/apply:os.path.join [*srcdir, *vdj_ref_dir]
 
 # celltype reference
-celltype_ref_file: &celltype_ref_file !!python/object/apply:pyutils.list_join [*species, ".rds"]
+celltype_ref_file: &celltype_ref_file !!python/object/apply:pycones.list_join [*species, ".rds"]
 celltype_ref: !!python/object/apply:os.path.join [*srcdir, 'celltype-ref', *celltype_ref_file]
 
 # igblast reference
-igblast_VDJB_ref_prefix_part1: &igblast_VDJB_ref_prefix_part1 !!python/object/apply:pyutils.list_join [*species, "-VDJB"]
-igblast_VDJB_ref_prefix_part2: &igblast_VDJB_ref_prefix_part2 !!python/object/apply:pyutils.list_join [*species, "_gl_"]
+igblast_VDJB_ref_prefix_part1: &igblast_VDJB_ref_prefix_part1 !!python/object/apply:pycones.list_join [*species, "-VDJB"]
+igblast_VDJB_ref_prefix_part2: &igblast_VDJB_ref_prefix_part2 !!python/object/apply:pycones.list_join [*species, "_gl_"]
 igblast_VDJB_ref_prefix: !!python/object/apply:os.path.join [*srcdir, 'igblast-ref', *igblast_VDJB_ref_prefix_part1, *igblast_VDJB_ref_prefix_part2]
-igblast_VDJT_ref_prefix_part1: &igblast_VDJT_ref_prefix_part1 !!python/object/apply:pyutils.list_join [*species, "-VDJT"]
-igblast_VDJT_ref_prefix_part2: &igblast_VDJT_ref_prefix_part2 !!python/object/apply:pyutils.list_join [*species, "_gl_"]
+igblast_VDJT_ref_prefix_part1: &igblast_VDJT_ref_prefix_part1 !!python/object/apply:pycones.list_join [*species, "-VDJT"]
+igblast_VDJT_ref_prefix_part2: &igblast_VDJT_ref_prefix_part2 !!python/object/apply:pycones.list_join [*species, "_gl_"]
 igblast_VDJT_ref_prefix: !!python/object/apply:os.path.join [*srcdir, 'igblast-ref', *igblast_VDJT_ref_prefix_part1, *igblast_VDJT_ref_prefix_part2]
 
 # changeo reference
@@ -163,5 +163,5 @@ changeo_DT_ref: !!python/object/apply:os.path.join [*srcdir, 'igblast-ref', *igb
 changeo_JT_ref: !!python/object/apply:os.path.join [*srcdir, 'igblast-ref', *igblast_VDJT_ref_prefix_part1, 'TRJ.fasta']
 
 # igblast auxiliary
-igblast_aux_file: &igblast_aux_file !!python/object/apply:pyutils.list_join [*species, "_gl.aux"]
+igblast_aux_file: &igblast_aux_file !!python/object/apply:pycones.list_join [*species, "_gl.aux"]
 igblast_aux: !!python/object/apply:os.path.join [*srcdir, 'igblast-aux', *igblast_aux_file]
