@@ -6,8 +6,9 @@
 ```shell
 mamba create -n cell10x
 mamba activate cell10x
-mamba install snakemake
+mamba install snakemake=8.24.0
 pip install pycones
+pip install snakemake-executor-plugin-cluster-generic
 ```
 
 3. 访问[10x官方](https://support.10xgenomics.com/single-cell-gene-expression/software/downloads/7.1/)，获取 `Cellranger`的下载链接
@@ -40,9 +41,9 @@ rawdata/
    |_ test-VDJT_S...fastq.gz
    |_ test-VDJB_S...fastq.gz
  |_ sample1/
-   |_ sample1-mRNA...fastq.gz
-   |_ sample1-VDJB...fastq.gz
-   |_ sample1-FB...fastq.gz
+   |_ sample1-mRNA_S...fastq.gz
+   |_ sample1-VDJB_S...fastq.gz
+   |_ sample1-FB_S...fastq.gz
 
 ```
 
@@ -53,7 +54,7 @@ rawdata/
 - 在 `Sample Variables`部分，指定每个样本包含的测序文库，如 `mRNA, VDJB, VDJT, FB`等。也可以在此处单独指定每个样本的运行参数，如使用特殊的细胞类型注释索引、特殊的过滤条件等，这会覆盖 `Default Variables`部分与其名称相同的参数
 - 在 `Default Variables`部分，指定默认的运行参数
 - 在 `Resources`部分，指定运行时占用的cpu资源。每个cpu对应的内存数在 `~/.config/snakemake/cell10x/config.yaml`中指定
-- 在 `Constant`部分，指定一般不会改变的常量，例如索引文件的位置
+- 在 `Constant`部分，指定一般不会改变的常量
 
 ## Feature barcode
 
@@ -117,6 +118,7 @@ rawdata/
 3. 小鼠通用：mouse common, MouseRNAseqData
 4. 小鼠免疫：mouse immune, ImmGenData
 
+- 在调用`Seurat::NormalizeData()`之后使用`singleR`注释，因为celldex的reference都以normalized log的形式存储
 - 输出 `Seurat`对象的 `rds`，和其 `meta.data`的 `csv`
 
 ![](doc/fig/mRNA_parse_csv.png)
@@ -203,10 +205,6 @@ VDJT与VDJB的区别：
 [主题编辑器 - Apache ECharts](https://echarts.apache.org/zh/theme-builder.html)
 
 # 常见问题
-
-## 软件版本
-
-- `snakemake`：7.25.2
 
 ## 安装
 
