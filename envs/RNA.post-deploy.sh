@@ -1,7 +1,5 @@
 #!/usr/bin/bash
 log=$CONDA_PREFIX/deploy.log
-srcdir=src
-mkdir -p ${srcdir}/celltype-ref
 
 ##################################
 ### baizer

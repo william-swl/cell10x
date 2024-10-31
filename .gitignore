@@ -1,0 +1,6 @@
+.ipynb_checkpoints/
+.snakemake/
+conda_envs/
+test/
+src/
+
