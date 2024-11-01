@@ -54,7 +54,7 @@ rule all:
         # count
         count_dir = expand(Pcount + '/{sample}/{sample}/outs', sample=Lsample),
         # VDJ
-        VDJB_igblast_tsv = expand(PVDJB + '/{sample}/igblast_airr.tsv',sample=Lsample),
+        VDJB_igblast_tsv = [PVDJB + f'/{sample}/igblast_airr.tsv' for sample in Lsample if config[sample]['VDJB']],
         # parse
         mRNA_csv = [PmRNA + f'/{sample}/mRNA.csv' for sample in Lsample if config[sample]['mRNA']],
         VDJB_csv = [PVDJB + f'/{sample}/VDJB.csv' for sample in Lsample if config[sample]['VDJB']],
