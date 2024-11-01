@@ -13,7 +13,7 @@ pip install snakemake-executor-plugin-cluster-generic
 
 3. 访问[10x官方](https://support.10xgenomics.com/single-cell-gene-expression/software/downloads/7.1/)，获取 `Cellranger`的下载链接
 
-![img](doc/fig/cellranger_download.png)
+![img](doc/fig/cellranger_download.png)，将在下一步用到
 
 4. 运行脚本搭建运行环境
 
@@ -25,10 +25,29 @@ bash init.sh
   - 将 `smk_profiles`内的匿名 `conda`路径更改为当前目录
   - 在 `~./config/snakemake`下创建 `profile`，以供 `snakemake --profile`调用
   - 将 `sample_config/test.yaml`内的测试数据集路径更改为当前目录
-  - 安装 `Cellranger`、所需参考数据集
+  - 根据贴入的链接安装 `Cellranger`、所需参考数据集
   - 设置 `conda`的channel优先选择 `conda-forge`，以[尽量避免兼容性问题](https://conda-forge.org/docs/user/tipsandtricks.html)
-  - 运行 `snakemake --conda-create-envs-only`，创建所需的匿名 `conda`环境
+  - 运行 `snakemake --conda-create-envs-only`，创建所需的匿名 `conda`环境。该步骤耗时较长，根据网络情况可能十几分钟到几小时不等
 - 如果一切顺利，将不需要额外下载任何资源
+
+5. 测试
+
+输入以下命令，在本地运行测试样本
+
+```
+snakemake --profile cell10x --configfile sample_config/test.yaml -j6
+```
+
+出现如下结果，说明任务解析成功。继续运行可能需要`20G`以上内存，可`CTRL+C`打断
+
+![](doc/fig/test_run.jpg)
+
+如果计算集群使用`slurm`管理任务，可输入以下命令，在计算集群执行测试
+
+```
+snakemake --profile cell10x_slurm --configfile sample_config/test.yaml -j6
+```
+
 
 # 输入
 
