@@ -5,8 +5,9 @@ indir: "/home/william/pipeline/cell10x/test/rawdata"
 outdir: "/home/william/pipeline/cell10x/test/out"
 srcdir: "/home/william/pipeline/cell10x/src"
 Lsample:
-  - test
+  - test1
   - test2
+  - test3
 species: human
 metadata: /home/william/pipeline/cell10x/sample_config/metadata/test.csv
 run_tree: False
@@ -15,7 +16,7 @@ run_batch_stat: True
 ##############################
 ######## Sample Variables
 ##############################
-test:
+test1:
   mRNA: True
   FB: False
   VDJB: True
@@ -45,6 +46,12 @@ test2:
   FB_corr:
       BA2#1: 2
       BA2#2: 2
+
+test3:
+  mRNA: False
+  FB: False
+  VDJB: True
+  VDJT: False
 
 
 ##############################
@@ -96,7 +103,7 @@ tree_sample: 100
 ######## Resources
 ##############################
 qc_cpus: 2
-count_cpus: 3
+count_cpus: 8
 mRNA_parse_cpus: 2
 FB_parse_cpus: 2
 VDJB_igblast_cpus: 2
