@@ -1,15 +1,14 @@
 ##############################
 ######## Key Variables
 ##############################
-indir: "/home/william/pipeline/cell10x/test/rawdata"
-outdir: "/home/william/pipeline/cell10x/test/out"
-srcdir: "/home/william/pipeline/cell10x/src"
+indir: test/rawdata
+outdir: test/out
 Lsample:
   - test1
   - test2
   - test3
 species: human
-metadata: /home/william/pipeline/cell10x/sample_config/metadata/test.csv
+metadata: configs/metadata/test.csv
 run_tree: False
 run_batch_stat: True
 
@@ -33,26 +32,25 @@ test2:
   Nmin_cell_to_keep_gene: 10
   Nmin_gene_to_keep_cell: 10
   id2seq:
-    HT: 
+    HT:
       PRM: TGATGGCCTATTGGG
       BTI: GTCAACTCTTTAGCG
-    NC: 
+    NC:
       OVA: TGCCAGCCCTTTGTA
-    BD: 
+    BD:
       BA2#1: ATGCGATCAGACCGA
       BA2#2: CGTATGCGCTTCAAG
       WT#1: CAGCAACTTCATTGT
       WT#2: GGTATAAGAGCTACG
   FB_corr:
-      BA2#1: 2
-      BA2#2: 2
+    BA2#1: 2
+    BA2#2: 2
 
 test3:
   mRNA: False
   FB: False
   VDJB: True
   VDJT: False
-
 
 ##############################
 ######## Default Variables
@@ -67,9 +65,9 @@ Ndim_umap_use: 30
 ext_numbering: chothia
 
 # FB
-FB_read: 'R2'
-FB_pattern: '5PNNNNNNNNNN(BC)'
-FB_type: 'Antibody Capture'
+FB_read: "R2"
+FB_pattern: "5PNNNNNNNNNN(BC)"
+FB_type: "Antibody Capture"
 Nlim_HT: 10
 Nratio_HT: 0.9
 Nratio_BD: 0.2
@@ -117,7 +115,6 @@ concat_stat_cpus: 2
 visualize_cpus: 2
 visualize_rmd_cpus: 2
 
-
 ##############################
 ######## Constant
 ##############################
@@ -133,4 +130,3 @@ count_VDJB_mtx: per_sample_outs/{sample}/metrics_summary.csv
 count_VDJT_airr: per_sample_outs/{sample}/vdj_t/airr_rearrangement.tsv
 count_VDJT_anno: per_sample_outs/{sample}/vdj_t/filtered_contig_annotations.csv
 count_VDJT_mtx: per_sample_outs/{sample}/metrics_summary.csv
-

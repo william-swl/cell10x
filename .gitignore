@@ -3,4 +3,5 @@
 conda_envs/
 test/
 src/
-
+envs/instances/
+cellranger.log

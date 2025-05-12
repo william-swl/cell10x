@@ -1,18 +1,16 @@
 import os,time,shutil,pycones
 import pandas as pd
-pip_dir = os.getcwd()
-configfile: f'{pip_dir}/sample_config/test.yaml'
+configfile: 'configs/test.yaml'
 
 # argument
 species = config['species']
-srcdir = config['srcdir']
 
 # software
-cellranger = f'{srcdir}/cellranger-7.1.0/bin/cellranger'
+cellranger = os.path.abspath('src/cellranger-7.1.0/bin/cellranger')
 
 # structure
-indir=config['indir']
-outdir=config['outdir']
+indir=os.path.abspath(config['indir'])
+outdir=os.path.abspath(config['outdir'])
 Lsample=config['Lsample']
 Plog=f'{outdir}/0log'
 Pstat=f'{outdir}/0stat'
@@ -38,11 +36,11 @@ onstart:
     time_start = time.strftime("%y%m%d_%H%M%S", time.localtime())
     smk_file_name = workflow.snakefile.split('/')[-1]
     shutil.copyfile(workflow.snakefile, f'{Plog}/all/{time_start}_{smk_file_name}')
-    for f in os.listdir(f'{pip_dir}/scripts'):
+    for f in os.listdir('scripts'):
         if f.endswith('.r.ipynb'):
-            pycones.nb_kernel_switch(f'{pip_dir}/scripts/{f}', f'{Plog}/{f}', kernel='r')
+            pycones.nb_kernel_switch(f'scripts/{f}', f'{Plog}/{f}', kernel='r')
         elif f.endswith('.py.ipynb'):
-            pycones.nb_kernel_switch(f'{pip_dir}/scripts/{f}', f'{Plog}/{f}', kernel='python')
+            pycones.nb_kernel_switch(f'scripts/{f}', f'{Plog}/{f}', kernel='python')
 
 
 rule all:
@@ -86,7 +84,7 @@ rule qc:
     benchmark: Plog + '/qc/{sample}.bmk'
     resources: cpus=config['qc_cpus']
     params: stat_dir = Pstat + '/{sample}/qc'
-    conda: f'{pip_dir}/envs/upstream.yaml'
+    conda: 'envs/upstream.yaml'
     shell:"""
         find {input} -name "*.fastq.gz" -or -name "*.fq.gz" | xargs fastqc -o {Pqc}/{wildcards.sample} -t {resources.cpus} 1>{log.o} 2>{log.e}
         multiqc -i {wildcards.sample} -f -o {Pqc}/{wildcards.sample}/multiqc {Pqc}/{wildcards.sample} 1>>{log.o} 2>>{log.e}
@@ -103,7 +101,7 @@ rule cellranger_config:
     resources: cpus=1
     params: 
         feature_ref=Pcount + '/{sample}/feature_ref.csv'
-    conda: f'{pip_dir}/envs/RNA.yaml'
+    conda: 'envs/RNA.yaml'
     notebook: Plog + '/cellranger_config.r.ipynb'
 
 
@@ -114,8 +112,8 @@ rule count:
     benchmark: Plog + '/count/{sample}.bmk'
     resources: cpus=config['count_cpus']
     shell:"""
-        cd {Pcount}/{wildcards.sample}
         rm -r {Pcount}/{wildcards.sample}/{wildcards.sample}
+        cd {Pcount}/{wildcards.sample}
         {cellranger} multi --id={wildcards.sample} \\
             --csv={input} --localcores {resources.cpus} --mempercore 4 \\
             1>{log.o} 2>{log.e}
@@ -137,7 +135,7 @@ if lambda wildcards:config[wildcards.sample]['mRNA']:
              e = Plog + '/mRNA_parse/{sample}.e', o = Plog + '/mRNA_parse/{sample}.o'
         benchmark: Plog + '/mRNA_parse/{sample}.bmk'
         resources: cpus=config['mRNA_parse_cpus']
-        conda: f'{pip_dir}/envs/RNA.yaml'
+        conda: 'envs/RNA.yaml'
         notebook: Plog + '/mRNA_parse.r.ipynb'
 
 
@@ -156,7 +154,7 @@ if lambda wildcards:config[wildcards.sample]['FB']:
              e = Plog + '/FB_parse/{sample}.e', o = Plog + '/FB_parse/{sample}.o'
         benchmark: Plog + '/FB_parse/{sample}.bmk'
         resources: cpus=config['FB_parse_cpus']
-        conda: f'{pip_dir}/envs/RNA.yaml'
+        conda: 'envs/RNA.yaml'
         notebook: Plog + '/FB_parse.r.ipynb'
 
 
@@ -174,10 +172,10 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
         benchmark: Plog + '/VDJB_igblast/{sample}.bmk'
         resources: cpus=config['VDJB_igblast_cpus']
         params: 
-            igblast_VDJB_ref_prefix = f'{srcdir}/igblast-ref/{species}-VDJB/{species}_gl_',
-            igblast_aux = f'{srcdir}/igblast-aux/{species}_gl.aux',
+            igblast_VDJB_ref_prefix = f'src/igblast-ref/{species}-VDJB/{species}_gl_',
+            igblast_aux = f'src/igblast-aux/{species}_gl.aux',
             VDJB_airr = rules.count.output.count_dir + f"/{config['count_VDJB_airr']}"
-        conda: f'{pip_dir}/envs/VDJ.yaml'
+        conda: 'envs/VDJ.yaml'
         shell:"""
             # fetch sequences in ORF
             R -e " \
@@ -214,11 +212,11 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
         log: e = Plog + '/VDJB_changeo/{sample}.e', o = Plog + '/VDJB_changeo/{sample}.o'
         benchmark: Plog + '/VDJB_changeo/{sample}.bmk'
         resources: cpus=config['VDJB_changeo_cpus']
-        conda: f'{pip_dir}/envs/VDJ.yaml'
+        conda: 'envs/VDJ.yaml'
         params: 
-            changeo_VB_ref = f'{srcdir}/igblast-ref/{species}-VDJB/IGV.fasta',
-            changeo_DB_ref = f'{srcdir}/igblast-ref/{species}-VDJB/IGD.fasta',
-            changeo_JB_ref = f'{srcdir}/igblast-ref/{species}-VDJB/IGJ.fasta',
+            changeo_VB_ref = f'src/igblast-ref/{species}-VDJB/IGV.fasta',
+            changeo_DB_ref = f'src/igblast-ref/{species}-VDJB/IGD.fasta',
+            changeo_JB_ref = f'src/igblast-ref/{species}-VDJB/IGJ.fasta',
             outdir = PVDJB + '/{sample}'
         shell:"""
             MakeDb.py igblast -i {input.VDJB_igblast_txt} \\
@@ -257,7 +255,7 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             outdir = PVDJB + '/{sample}', 
             ext_numbering = config['ext_numbering'],
             VDJB_airr = rules.count.output.count_dir + f"/{config['count_VDJB_airr']}"
-        conda: f'{pip_dir}/envs/VDJ.yaml'
+        conda: 'envs/VDJ.yaml'
         shell:"""
             # fetch sequences in ORF
             R -e " \
@@ -306,7 +304,7 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
              e = Plog + '/VDJB_parse/{sample}.e', o = Plog + '/VDJB_parse/{sample}.o'
         benchmark: Plog + '/VDJB_parse/{sample}.bmk'
         resources: cpus=config['VDJB_parse_cpus']
-        conda: f'{pip_dir}/envs/VDJ.yaml'
+        conda: 'envs/VDJ.yaml'
         notebook: Plog + '/VDJB_parse.r.ipynb'
 
 
@@ -325,7 +323,7 @@ if lambda wildcards:config[wildcards.sample]['VDJT']:
              e = Plog + '/VDJT_parse/{sample}.e', o = Plog + '/VDJT_parse/{sample}.o'
         benchmark: Plog + '/VDJT_parse/{sample}.bmk'
         resources: cpus=config['VDJT_parse_cpus']
-        conda: f'{pip_dir}/envs/VDJ.yaml'
+        conda: 'envs/VDJ.yaml'
         notebook: Plog + '/VDJT_parse.r.ipynb'
 
 
@@ -358,7 +356,7 @@ rule filter:
          e = Plog + '/filter/{sample}.e', o = Plog + '/filter/{sample}.o'
     benchmark: Plog + '/filter/{sample}.bmk'
     resources: cpus=config['filter_cpus']
-    conda: f'{pip_dir}/envs/visualize.yaml'
+    conda: 'envs/visualize.yaml'
     notebook: Plog + '/filter.r.ipynb'
 
 
@@ -370,7 +368,7 @@ rule concat_stat:
     params: metadata = config['metadata']
     benchmark: Plog + '/concat_stat/{sample}.bmk'
     resources: cpus=config['concat_stat_cpus']
-    conda: f'{pip_dir}/envs/visualize.yaml'
+    conda: 'envs/visualize.yaml'
     notebook: Plog + '/concat_stat.r.ipynb'
 
 if config['run_batch_stat']:
@@ -395,22 +393,22 @@ rule visualize:
          e = Plog + '/visualize/{sample}.e', o = Plog + '/visualize/{sample}.o'
     params: 
         stat_dir = Pstat + '/{sample}',
-        echarts_theme = f'{pip_dir}/src/echarts_theme/mytheme.json',
+        echarts_theme = 'src/echarts_theme/mytheme.json',
         metadata = config['metadata']
     benchmark: Plog + '/visualize/{sample}.bmk'
     resources: cpus=config['visualize_cpus']
-    conda: f'{pip_dir}/envs/visualize.yaml'
+    conda: 'envs/visualize.yaml'
     notebook: Plog + '/visualize.r.ipynb'
 
 rule visualize_rmd:
     input: visualize_rds = rules.visualize.output.visualize_rds
     output: visualize_html = Pvisualize + '/{sample}.html'
     log: e = Plog + '/visualize_rmd/{sample}.e', o = Plog + '/visualize_rmd/{sample}.o'
-    params: css_dir = f'{pip_dir}/src/visualize_css'
+    params: css_dir = 'src/visualize_css'
     benchmark: Plog + '/visualize_rmd/{sample}.bmk'
     resources: cpus=config['visualize_rmd_cpus']
-    conda: f'{pip_dir}/envs/visualize.yaml'
-    script: f'{pip_dir}/scripts/visualize.Rmd'
+    conda: 'envs/visualize.yaml'
+    script: 'scripts/visualize.Rmd'
 
 
 
@@ -427,7 +425,7 @@ if lambda wildcards: (config[wildcards.sample]['VDJB'] and config['run_tree']) :
         log: e = Plog + '/Bcell_tree/{sample}.e', o = Plog + '/Bcell_tree/{sample}.o'
         benchmark: Plog + '/Bcell_tree/{sample}.bmk'
         resources: cpus=config['Bcell_tree_cpus']
-        conda: f'{pip_dir}/envs/VDJ.yaml'
+        conda: 'envs/VDJ.yaml'
         params: 
             Bcell_changeo_flt_H = rules.filter.params.Bcell_changeo_flt_H,
             Bcell_changeo_flt_L = rules.filter.params.Bcell_changeo_flt_L,

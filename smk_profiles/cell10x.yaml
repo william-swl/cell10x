@@ -1,7 +1,0 @@
-show-failed-logs: TRUE
-use-conda: TRUE
-conda-frontend: mamba
-conda-prefix: "/home/william/pipeline/cell10x/conda_envs"
-rerun-triggers:
-  - mtime
-  - input

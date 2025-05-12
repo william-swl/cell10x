@@ -1,0 +1,12 @@
+show-failed-logs: True
+printshellcmds: True
+use-conda: True
+verbose: True
+keep-incomplete: True
+keep-going: True
+retries: 2
+conda-prefix: "envs/instances"
+notebook-listen: localhost:12500
+rerun-triggers:
+  - mtime
+  - input
