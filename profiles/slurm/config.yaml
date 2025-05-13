@@ -1,3 +1,5 @@
+executor: cluster-generic
+cluster-generic-submit-cmd: "sbatch --mem-per-cpu 4g -c {resources.cpus} -J {rule}_{wildcards} -o {log.o} -e {log.e} -t 10080"
 show-failed-logs: True
 printshellcmds: True
 use-conda: True
@@ -10,3 +12,4 @@ notebook-listen: localhost:12500
 rerun-triggers:
   - mtime
   - input
+

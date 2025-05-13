@@ -1,4 +1,8 @@
+init:
+	bash init.sh
+	just build_envs
 build_envs:
+	conda config --set channel_priority strict
 	snakemake --profile profiles/local --conda-create-envs-only -j1
 clean_envs:
 	snakemake --profile profiles/local --conda-cleanup-envs -j1

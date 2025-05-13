@@ -1,19 +1,5 @@
 #!/usr/bin/bash
 
-# edit profiles
-current_dir=$(pwd)
-sed -i "s|/home/william/pipeline/cell10x|$current_dir|g" smk_profiles/cell10x.yaml
-sed -i "s|/home/william/pipeline/cell10x|$current_dir|g" smk_profiles/cell10x_slurm.yaml
-
-# copy profiles
-mkdir -p ~/.config/snakemake/cell10x
-cp smk_profiles/cell10x.yaml ~/.config/snakemake/cell10x/config.yaml
-mkdir -p ~/.config/snakemake/cell10x_slurm
-cp smk_profiles/cell10x_slurm.yaml ~/.config/snakemake/cell10x_slurm/config.yaml
-
-# edit test.yaml
-sed -i "s|/home/william/pipeline/cell10x|$current_dir|g" sample_config/test.yaml
-
 ##################################
 ### input
 ##################################
@@ -26,7 +12,7 @@ read -p "Download mouse reference? (y/n): " yn_mouse
 ##################################
 srcdir=src
 mkdir -p $srcdir
-log=./cellranger.log
+log=./install_cellranger.log
 
 cr_md5=0938af789631800b20176527063c029a
 
@@ -193,11 +179,3 @@ if [ $yn_mouse = y ]; then
     fi
 
 fi
-
-
-
-##################################
-### build envs
-##################################
-conda config --set channel_priority strict
-snakemake --profile cell10x --conda-create-envs-only -j1
