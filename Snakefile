@@ -162,10 +162,21 @@ if lambda wildcards:config[wildcards.sample]['FB']:
 ### VDJB
 ##################################
 if lambda wildcards:config[wildcards.sample]['VDJB']:
-    rule VDJB_igblast:
+    rule VDJB_extract:
         input: count_dir = rules.count.output.count_dir
-        output:
+        output: 
             VDJB_orf_nt_fa = PVDJB + '/{sample}/seq_orf_nt.fasta',
+            VDJB_orf_aa_fa = PVDJB + '/{sample}/seq_orf_aa.fasta'
+        log: notebook = Plog + '/VDJB_extract/{sample}.r.ipynb', 
+             e = Plog + '/VDJB_extract/{sample}.e', o = Plog + '/VDJB_extract/{sample}.o'
+        benchmark: Plog + '/VDJB_extract/{sample}.bmk'
+        resources: cpus=1
+        conda: 'envs/VDJ.yaml'
+        notebook: Plog + '/VDJB_extract.r.ipynb'
+
+    rule VDJB_igblast:
+        input: VDJB_orf_nt_fa = rules.VDJB_extract.output.VDJB_orf_nt_fa
+        output:
             VDJB_igblast_tsv = PVDJB + '/{sample}/igblast_airr.tsv',
             VDJB_igblast_txt = PVDJB + '/{sample}/igblast_blast.txt',
         log: e = Plog + '/VDJB_igblast/{sample}.e', o = Plog + '/VDJB_igblast/{sample}.o'
@@ -174,21 +185,14 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
         params: 
             igblast_VDJB_ref_prefix = f'src/igblast-ref/{species}-VDJB/{species}_gl_',
             igblast_aux = f'src/igblast-aux/{species}_gl.aux',
-            VDJB_airr = rules.count.output.count_dir + f"/{config['count_VDJB_airr']}"
         conda: 'envs/VDJ.yaml'
         shell:"""
-            # fetch sequences in ORF
-            R -e " \
-                x <- readr::read_tsv('{params.VDJB_airr}'); \
-                genogamesh::parse_CellRanger_vdjseq(x, file='{output.VDJB_orf_nt_fa}', fa_content='seq_orf_nt') \
-                " 1>>{log.o} 2>>{log.e}
-            
             # airr format
             igblastn -organism {species} -germline_db_V {params.igblast_VDJB_ref_prefix}V -domain_system imgt\\
                 -germline_db_D {params.igblast_VDJB_ref_prefix}D -germline_db_J {params.igblast_VDJB_ref_prefix}J \\
                 -auxiliary_data {params.igblast_aux} \\
                 -show_translation -outfmt 19 -num_threads {resources.cpus} \\
-                -query {output.VDJB_orf_nt_fa} \\
+                -query {input.VDJB_orf_nt_fa} \\
                 -out {output.VDJB_igblast_tsv} 1>>{log.o} 2>>{log.e}
             
             # blast format
@@ -196,13 +200,13 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
                 -germline_db_D {params.igblast_VDJB_ref_prefix}D -germline_db_J {params.igblast_VDJB_ref_prefix}J \\
                 -auxiliary_data {params.igblast_aux} \\
                 -show_translation -outfmt '7 std qseq sseq btop' -num_threads {resources.cpus} \\
-                -query {output.VDJB_orf_nt_fa} \\
+                -query {input.VDJB_orf_nt_fa} \\
                 -out {output.VDJB_igblast_txt} 1>>{log.o} 2>>{log.e}
             """
 
     rule VDJB_changeo:
         input:
-            VDJB_orf_nt_fa = rules.VDJB_igblast.output.VDJB_orf_nt_fa,
+            VDJB_orf_nt_fa = rules.VDJB_extract.output.VDJB_orf_nt_fa,
             VDJB_igblast_txt = rules.VDJB_igblast.output.VDJB_igblast_txt
         output: 
             VDJB_changeo_db = PVDJB + '/{sample}/changeo_db-pass.tsv',
@@ -217,7 +221,6 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             changeo_VB_ref = f'src/igblast-ref/{species}-VDJB/IGV.fasta',
             changeo_DB_ref = f'src/igblast-ref/{species}-VDJB/IGD.fasta',
             changeo_JB_ref = f'src/igblast-ref/{species}-VDJB/IGJ.fasta',
-            outdir = PVDJB + '/{sample}'
         shell:"""
             MakeDb.py igblast -i {input.VDJB_igblast_txt} \\
                 -r {params.changeo_VB_ref} {params.changeo_DB_ref} {params.changeo_JB_ref} \\
@@ -236,12 +239,21 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
                 1>>{log.o} 2>>{log.e}
             """
 
+    rule VDJB_germline:
+        input: VDJB_igblast_tsv = rules.VDJB_igblast.output.VDJB_igblast_tsv
+        output: VDJB_gm_aa_fa = PVDJB + '/{sample}/seq_gm_aa.fasta'
+        log: notebook = Plog + '/VDJB_germline/{sample}.r.ipynb', 
+             e = Plog + '/VDJB_germline/{sample}.e', o = Plog + '/VDJB_germline/{sample}.o'
+        benchmark: Plog + '/VDJB_germline/{sample}.bmk'
+        resources: cpus=1
+        conda: 'envs/VDJ.yaml'
+        notebook: Plog + '/VDJB_germline.r.ipynb'
+
     rule VDJB_anarci:
         input: 
-            VDJB_igblast_tsv = rules.VDJB_igblast.output.VDJB_igblast_tsv
+            VDJB_orf_aa_fa = rules.VDJB_extract.output.VDJB_orf_aa_fa,
+            VDJB_gm_aa_fa = rules.VDJB_germline.output.VDJB_gm_aa_fa
         output:
-            VDJB_orf_aa_fa = PVDJB + '/{sample}/seq_orf_aa.fasta',
-            VDJB_gm_aa_fa = PVDJB + '/{sample}/seq_gm_aa.fasta',
             VDJB_orf_anarci_H = PVDJB + '/{sample}/orf_anarci_H.csv',
             VDJB_orf_anarci_KL = PVDJB + '/{sample}/orf_anarci_KL.csv',
             VDJB_gm_anarci_H = PVDJB + '/{sample}/gm_anarci_H.csv',
@@ -254,30 +266,20 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
         params: 
             outdir = PVDJB + '/{sample}', 
             ext_numbering = config['ext_numbering'],
-            VDJB_airr = rules.count.output.count_dir + f"/{config['count_VDJB_airr']}"
         conda: 'envs/VDJ.yaml'
         shell:"""
-            # fetch sequences in ORF
-            R -e " \
-                x <- readr::read_tsv('{params.VDJB_airr}'); \
-                genogamesh::parse_CellRanger_vdjseq(x, file='{output.VDJB_orf_aa_fa}', fa_content='seq_orf_aa'); \
-                pre_y <- dplyr::pull(readr::read_tsv('{input.VDJB_igblast_tsv}'), germline_alignment_aa, sequence_id); \
-                y <- stringr::str_replace_all(pre_y, '-', ''); names(y) <- names(pre_y); \
-                genogamesh::write_fasta(y, '{output.VDJB_gm_aa_fa}'); \
-                " 1>>{log.o} 2>>{log.e}
-
             cd {params.outdir}
             # for mutation target profile 
-            ANARCI -i {output.VDJB_orf_aa_fa} -o orf_anarci -ht orf_anarci_hittable.txt \\
+            ANARCI -i {input.VDJB_orf_aa_fa} -o orf_anarci -ht orf_anarci_hittable.txt \\
                 --use_species {species} --restrict ig -s imgt --csv --ncpu {resources.cpus} \\
                 --assign_germline 1>>{log.o} 2>>{log.e}
 
-            ANARCI -i {output.VDJB_gm_aa_fa} -o gm_anarci -ht gm_anarci_hittable.txt \\
+            ANARCI -i {input.VDJB_gm_aa_fa} -o gm_anarci -ht gm_anarci_hittable.txt \\
                 --use_species {species} --restrict ig -s imgt --csv --ncpu {resources.cpus} \\
                 --assign_germline 1>>{log.o} 2>>{log.e}
 
             # for extended numbering
-            ANARCI -i {output.VDJB_orf_aa_fa} -o ext_anarci -ht ext_anarci_hittable.txt \\
+            ANARCI -i {input.VDJB_orf_aa_fa} -o ext_anarci -ht ext_anarci_hittable.txt \\
                 --use_species {species} --restrict ig -s {params.ext_numbering} --csv --ncpu {resources.cpus} \\
                 --assign_germline 1>>{log.o} 2>>{log.e}
         """
@@ -300,6 +302,8 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
             VDJB_mut = PVDJB + '/{sample}/VDJB_mut.csv',
             VDJB_stat = PVDJB + '/{sample}/VDJB_stat.yaml',
             stat_dir = directory(Pstat + '/{sample}/VDJB')
+        params:
+            ab_schema_region = f'src/ab_scheme_region.csv',
         log: notebook = Plog + '/VDJB_parse/{sample}.r.ipynb', 
              e = Plog + '/VDJB_parse/{sample}.e', o = Plog + '/VDJB_parse/{sample}.o'
         benchmark: Plog + '/VDJB_parse/{sample}.bmk'

@@ -4,17 +4,15 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - r-base=4.3.3
-  - r-stringi=1.8.4
-  - r-tidyverse=2.0.0
-  - r-devtools
-  - r-seurat=5.1.0
-  - r-matrixstats=1.4.1
-  - bioconductor-singler=2.4.0
-  - bioconductor-celldex=1.12.0
+  - r-base==4.3.3
+  - r-stringi==1.8.4
+  - r-tidyverse==2.0.0
+  - r-baizer==0.8.0
+  - r-seurat==5.1.0
+  - bioconductor-singler==2.4.0
+  - bioconductor-celldex==1.12.0
   - bioconductor-singlecellexperiment=1.24.0
+  - r-matrixstats=1.4.1
+  - r-devtools
   - notebook
   - r-irkernel
-  # for baizer
-  - r-openxlsx
-  - r-curl
