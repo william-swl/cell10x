@@ -183,22 +183,27 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
         benchmark: Plog + '/VDJB_igblast/{sample}.bmk'
         resources: cpus=config['VDJB_igblast_cpus']
         params: 
-            igblast_VDJB_ref_prefix = f'src/igblast-ref/{species}-VDJB/{species}_gl_',
-            igblast_aux = f'src/igblast-aux/{species}_gl.aux',
+            igblast_VDJB_ref_prefix = f'src/igblast-ref/germline_db/{species}-VDJB/{species}_',
+            igblast_igdata = "src/igblast-ref",
+            igblast_aux = f'src/igblast-ref/optional_file/{species}_gl.aux'
         conda: 'envs/VDJ.yaml'
         shell:"""
+            export IGDATA={params.igblast_igdata}
+
             # airr format
-            igblastn -organism {species} -germline_db_V {params.igblast_VDJB_ref_prefix}V -domain_system imgt\\
-                -germline_db_D {params.igblast_VDJB_ref_prefix}D -germline_db_J {params.igblast_VDJB_ref_prefix}J \\
+            igblastn -organism {species} -domain_system imgt \\
                 -auxiliary_data {params.igblast_aux} \\
+                -germline_db_V {params.igblast_VDJB_ref_prefix}V \\
+                -germline_db_D {params.igblast_VDJB_ref_prefix}D -germline_db_J {params.igblast_VDJB_ref_prefix}J \\
                 -show_translation -outfmt 19 -num_threads {resources.cpus} \\
                 -query {input.VDJB_orf_nt_fa} \\
                 -out {output.VDJB_igblast_tsv} 1>>{log.o} 2>>{log.e}
             
             # blast format
-            igblastn -organism {species} -germline_db_V {params.igblast_VDJB_ref_prefix}V -domain_system imgt\\
-                -germline_db_D {params.igblast_VDJB_ref_prefix}D -germline_db_J {params.igblast_VDJB_ref_prefix}J \\
+            igblastn -organism {species} -domain_system imgt \\
                 -auxiliary_data {params.igblast_aux} \\
+                -germline_db_V {params.igblast_VDJB_ref_prefix}V \\
+                -germline_db_D {params.igblast_VDJB_ref_prefix}D -germline_db_J {params.igblast_VDJB_ref_prefix}J \\
                 -show_translation -outfmt '7 std qseq sseq btop' -num_threads {resources.cpus} \\
                 -query {input.VDJB_orf_nt_fa} \\
                 -out {output.VDJB_igblast_txt} 1>>{log.o} 2>>{log.e}
@@ -218,9 +223,9 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
         resources: cpus=config['VDJB_changeo_cpus']
         conda: 'envs/VDJ.yaml'
         params: 
-            changeo_VB_ref = f'src/igblast-ref/{species}-VDJB/IGV.fasta',
-            changeo_DB_ref = f'src/igblast-ref/{species}-VDJB/IGD.fasta',
-            changeo_JB_ref = f'src/igblast-ref/{species}-VDJB/IGJ.fasta',
+            changeo_VB_ref = f'src/igblast-ref/germline_db/{species}-VDJB/IGV.fasta',
+            changeo_DB_ref = f'src/igblast-ref/germline_db/{species}-VDJB/IGD.fasta',
+            changeo_JB_ref = f'src/igblast-ref/germline_db/{species}-VDJB/IGJ.fasta',
         shell:"""
             MakeDb.py igblast -i {input.VDJB_igblast_txt} \\
                 -r {params.changeo_VB_ref} {params.changeo_DB_ref} {params.changeo_JB_ref} \\

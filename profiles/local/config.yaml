@@ -1,7 +1,7 @@
 show-failed-logs: True
 printshellcmds: True
 use-conda: True
-verbose: True
+verbose: False
 keep-incomplete: True
 keep-going: True
 retries: 2

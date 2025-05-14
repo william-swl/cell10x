@@ -3,7 +3,7 @@ cluster-generic-submit-cmd: "sbatch --mem-per-cpu 4g -c {resources.cpus} -J {rul
 show-failed-logs: True
 printshellcmds: True
 use-conda: True
-verbose: True
+verbose: False
 keep-incomplete: True
 keep-going: True
 retries: 2
