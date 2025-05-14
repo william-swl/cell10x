@@ -271,21 +271,22 @@ if lambda wildcards:config[wildcards.sample]['VDJB']:
         params: 
             outdir = PVDJB + '/{sample}', 
             ext_numbering = config['ext_numbering'],
+            use_species_cmd = f'--use_species {species}' if config['species'] in ['human', 'mouse'] else ''
         conda: 'envs/VDJ.yaml'
         shell:"""
             cd {params.outdir}
             # for mutation target profile 
             ANARCI -i {input.VDJB_orf_aa_fa} -o orf_anarci -ht orf_anarci_hittable.txt \\
-                --use_species {species} --restrict ig -s imgt --csv --ncpu {resources.cpus} \\
+                {params.use_species_cmd} --restrict ig -s imgt --csv --ncpu {resources.cpus} \\
                 --assign_germline 1>>{log.o} 2>>{log.e}
 
             ANARCI -i {input.VDJB_gm_aa_fa} -o gm_anarci -ht gm_anarci_hittable.txt \\
-                --use_species {species} --restrict ig -s imgt --csv --ncpu {resources.cpus} \\
+                {params.use_species_cmd} --restrict ig -s imgt --csv --ncpu {resources.cpus} \\
                 --assign_germline 1>>{log.o} 2>>{log.e}
 
             # for extended numbering
             ANARCI -i {input.VDJB_orf_aa_fa} -o ext_anarci -ht ext_anarci_hittable.txt \\
-                --use_species {species} --restrict ig -s {params.ext_numbering} --csv --ncpu {resources.cpus} \\
+                {params.use_species_cmd} --restrict ig -s {params.ext_numbering} --csv --ncpu {resources.cpus} \\
                 --assign_germline 1>>{log.o} 2>>{log.e}
         """
 

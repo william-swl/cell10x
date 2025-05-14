@@ -2,7 +2,7 @@
 ######## Key Variables
 ##############################
 indir: test/rawdata
-outdir: test/out
+outdir: test/out/human
 Lsample:
   - test1
   - test2
