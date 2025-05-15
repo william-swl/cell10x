@@ -1,0 +1,100 @@
+##############################
+######## Key Variables
+##############################
+indir: test/rawdata
+outdir: test/out/neomab-mouse
+Lsample:
+  - test5
+species: neomab-mouse
+metadata: configs/metadata/test-neomab-mouse.csv
+run_tree: False
+run_batch_stat: True
+
+##############################
+######## Sample Variables
+##############################
+
+test5:
+  mRNA: False
+  FB: False
+  VDJB: True
+  VDJT: False
+
+##############################
+######## Default Variables
+##############################
+# mRNA parse
+Nmin_cell_to_keep_gene: 100
+Nmin_gene_to_keep_cell: 100
+celltype_ref_tissue: immune
+Ndim_umap_use: 30
+
+# VDJ parse
+ext_numbering: chothia
+
+# FB
+FB_read: "R2"
+FB_pattern: "5PNNNNNNNNNN(BC)"
+FB_type: "Antibody Capture"
+Nlim_HT: 10
+Nratio_HT: 0.9
+Nratio_BD: 0.2
+Nratio_NC: 0.1
+
+# filter
+flt_mode:
+  Bcell:
+    - mRNA
+    - FB
+    - VDJB*
+  Tcell:
+    - mRNA
+    - FB
+    - VDJT*
+mRNA_gene_flt: 10
+mRNA_umi_flt: 10
+mRNA_mt_percent_flt: 10
+VDJB_umi_flt: 5
+VDJT_umi_flt: 5
+FB_umi_flt: 10
+
+# visualize
+show_celltypes_main: 5
+show_celltypes: 10
+
+# tree
+tree_sample: 100
+
+##############################
+######## Resources
+##############################
+qc_cpus: 2
+count_cpus: 8
+mRNA_parse_cpus: 2
+FB_parse_cpus: 2
+VDJB_igblast_cpus: 2
+VDJB_changeo_cpus: 2
+Bcell_tree_cpus: 4
+VDJB_anarci_cpus: 2
+VDJB_parse_cpus: 2
+VDJT_parse_cpus: 2
+filter_cpus: 2
+concat_stat_cpus: 2
+visualize_cpus: 2
+visualize_rmd_cpus: 2
+
+##############################
+######## Constant
+##############################
+# output
+count_mRNA_dir: per_sample_outs/{sample}/count/sample_filtered_feature_bc_matrix
+count_mRNA_mtx: per_sample_outs/{sample}/metrics_summary.csv
+count_FB_raw_dir: multi/count/raw_feature_bc_matrix
+count_FB_dir: per_sample_outs/{sample}/count/sample_filtered_feature_bc_matrix
+count_FB_mtx: per_sample_outs/{sample}/metrics_summary.csv
+count_VDJB_airr: per_sample_outs/{sample}/vdj_b/airr_rearrangement.tsv
+count_VDJB_anno: per_sample_outs/{sample}/vdj_b/filtered_contig_annotations.csv
+count_VDJB_mtx: per_sample_outs/{sample}/metrics_summary.csv
+count_VDJT_airr: per_sample_outs/{sample}/vdj_t/airr_rearrangement.tsv
+count_VDJT_anno: per_sample_outs/{sample}/vdj_t/filtered_contig_annotations.csv
+count_VDJT_mtx: per_sample_outs/{sample}/metrics_summary.csv
