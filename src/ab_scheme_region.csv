@@ -1,0 +1,13 @@
+scheme,chain,region,start,end
+imgt,H,cdr1,27,38
+imgt,H,cdr2,56,65
+imgt,H,cdr3,105,117
+imgt,L,cdr1,27,38
+imgt,L,cdr2,56,65
+imgt,L,cdr3,105,117
+chothia,H,cdr1,26,32
+chothia,H,cdr2,52,56
+chothia,H,cdr3,95,102
+chothia,L,cdr1,24,34
+chothia,L,cdr2,50,56
+chothia,L,cdr3,89,97
