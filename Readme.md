@@ -1,7 +1,7 @@
 # 安装
 
 1. 安装 `conda`和 `mamba`，设置合适的 `channel`
-2. 创建运行 pipeline 的新环境，并安装 `snakemake`
+2. 创建运行 pipeline 的新环境，并安装 `snakemake, just`
 
 ```shell
 mamba create -n cell10x
