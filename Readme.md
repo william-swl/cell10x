@@ -25,7 +25,7 @@ just init
 - 以上命令会：
   - 根据贴入的链接安装 `Cellranger`，下载所需参考数据集
   - 设置 `conda`的 channel 优先选择 `conda-forge`，以[尽量避免兼容性问题](https://conda-forge.org/docs/user/tipsandtricks.html)
-  - 运行 `snakemake --conda-create-envs-only`，创建所需的匿名 `conda`环境。该步骤耗时较长，根据网络情况可能十几分钟到几小时不等
+  - 创建所需的匿名 `conda`环境。该步骤耗时较长，根据网络情况可能十几分钟到几小时不等
 - 如果一切顺利，将不需要额外下载任何资源
 
 5. 测试
@@ -144,17 +144,17 @@ rawdata/
 
 ## VDJ
 
-1. `CellRanger`的输出中，`airr_rearrangement.tsv`可以提取出从起始密码子开始的核酸序列，因此先产生 `seq_orf_nt.fasta`，后续分析基于此序列。最终的 `seq_nt`也取自该文件。 `all_contig_annotations.csv `里有 reads 和 umis 信息，留待整合。其他大多注释 `IgBlast`也会给且更详细，最终都采用 `IgBlast`的结果
+1. `CellRanger`的输出中，`airr_rearrangement.tsv`可以提取出从起始密码子开始的核酸序列，因此先产生 `seq_orf_nt.fasta`，后续分析基于此序列。最终的 `seq_nt`也取自该文件。 `all_contig_annotations.csv `里有 reads 和 umis 信息，留待整合。其他大多注释 `IgBlast`也会给且更详细（如 gene、cdr），最终都采用 `IgBlast`的结果
 2. 对 `seq_orf_nt.fasta`使用 `IgBlast`，指定 IMGT 编号系统，输出 `airr`格式用于获取主要的 VDJ 注释，输出 `blast`格式用于获取 mismatch 计算 SHM
 3. 使用 `Change-O`，输出 `changeo_clone-pass.tsv`用于获取克隆信息
 4. 使用 `ANARCI`，输入取自`CellRanger`的氨基酸序列，获取额外编号系统下的 CDR 氨基酸序列（默认为 Chothia）。而且由于 `ANARCI`输出的 V-domain 氨基酸序列比 `IgBlast`输出的更完整，用于结果中的 `seq_align_aa`
 5. 使用 vdj 的总突变数量，除以 `seq_align_nt`的长度，得到 shm
-6. 对于同一个 cell、同一种 contig，如果有多条，取 uims 最多的那条，unique 标记为 FALSE
+6. 对于同一个 cell、同一种 contig，如果有多条，取 umi 最多的那条，unique 标记为 FALSE
 7. 根据轻重链分别展开以上信息
 
 VDJT 与 VDJB 的区别：
 
-1. 不再运行 igblast、changeo、ANARCI，仅从 `CellRanger`的结果取
+1. 不再运行 `igblast`、`changeo`、`ANARCI`，仅从 `CellRanger`的结果取
 2. `seq_nt`不再从起始密码子开始，而是序列首端
 3. 由于 `CellRanger`的输出就是这样，`seq_nt`和 `seq_align_nt_H`完全一致
 
@@ -221,7 +221,13 @@ VDJT 与 VDJB 的区别：
 
 ## 安装
 
-`envs/`下的 `xxx.yaml`指定了环境中需要通过 `conda/mamba`安装的程序，与之对应的可能有一个 `xxx.post-deploy.sh`，会在 `conda`环境安装完毕后执行
+如果环境安装失败，请首先排查网络问题、conda 源问题。仍无法解决时，清理 conda 缓存后重试
+
+```
+just clean_conda_cache
+```
+
+若需要进一步排查问题：`envs/`下的 `xxx.yaml`指定了环境中需要通过 `conda/mamba`安装的程序，与之对应的可能有一个 `xxx.post-deploy.sh`，会在 `conda`环境安装完毕后执行
 
 当出现如下提示时，证明创建的 `conda`环境安装在 `conda_envs/dab33f3628bbe1648ff335ed9bba215f_`，此时 `xxx.post-deploy.sh`正在执行，可通过查看 `conda_envs/dab33f3628bbe1648ff335ed9bba215f_/deploy.log`获取 `xxx.post-deploy.sh`的运行日志
 
@@ -230,3 +236,33 @@ Creating conda environment envs/upstream.yaml...
 Downloading and installing remote packages.
 Running post-deploy script conda_envs/dab33f3628bbe1648ff335ed9bba215f_.post-deploy.sh...
 ```
+
+## debug
+
+大多数 rule 都有对应的`.ipynb` notebook 文件作为日志产生，可以在类似`out/human/0log/filter/test1.r.ipynb`的路径下找到
+
+notebook 内部包含命令运行时所有的环境变量，可直接手动、逐步执行
+
+## 自定义物种
+
+比较典型案例是人源化小鼠。需要以下五种 reference 文件：
+
+1. cellranger reference：主要是`regions.fa`。从 IMGT 抓取序列，使用 cellranger 子命令[mkvdjref](https://support.10xgenomics.com/single-cell-vdj/software/pipelines/latest/advanced/references)命令生成参考基因组。如果抓取时遇到网络错误，可在其他网络环境尝试`scripts/fetch-imgt-download.py`抓取，然后继续运行`mkvdjref`
+
+2. igblast germline database：从 IMGT 获取，经 igblast 子命令`edit_imgt_file.pl`处理后的文件。本质是 seq name 精简后的 fasta
+
+3. igblast blast database index：igblast 子命令`makeblastdb`生成。例如`.nsq, .nsi`是 igblastn 的 index，`.psq, .psi`是 igblastp 的 index
+
+从他处获得的 blast index，想提取原始 fasta 文件，可安装`ncbi-blast`，使用如下命令：
+
+`ncbi-blast-2.16.0+/bin/blastdbcmd -db human_V -entry all -dbtype nucl -outfmt "%f" > human_V.fasta`
+
+4. igblast germline V gene annotation file：后缀名如`.ndm.imgt`，在运行 igblastn、指定 imgt numbering 时需要，用于确定 V 基因内 cdr、fwr 的位置。如果未写入某些 V 基因的注释，会导致 D gene、J gene 都 call 不出来，或 J 基因的 Lambda 或 Kappa 错误
+
+可将 igblast germline database 的 V 基因上传[网页端 igblast](https://www.ncbi.nlm.nih.gov/igblast/)生成。alignment format 选择 AIRR save to file
+
+使用核酸比对不一定总遵循密码子阅读框，因此要留心`v_alignment_start,v_sequence_start,fwr1_start`三列。当三列都是 1，代表阅读框正确，`.ndm.imgt`内`coding frame start`应是 0。如果三列不同，需要仔细确认。另外，所有列都不能为空
+
+![img](doc/fig/custom-vdj-diff.png)
+
+5. igblast aux file：后缀名是`.aux`，运行 igblast 时指定 J 基因的位置、CDR3 的 stop 位置。没有该文件 call 不出 cdr3
