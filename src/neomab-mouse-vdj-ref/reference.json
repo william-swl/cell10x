@@ -1,0 +1,10 @@
+{
+    "fasta_hash": "500e150c3ebab3d1d024de1c942160cd809da1fa",
+    "genomes": "neomab_mouse",
+    "gtf_hash": null,
+    "input_fasta_files": "vdj_IMGT_mouse-mkvdjref-input.fasta",
+    "input_gtf_files": null,
+    "mkref_version": "cellranger-7.1.0",
+    "type": "V(D)J Reference",
+    "version": null
+}
